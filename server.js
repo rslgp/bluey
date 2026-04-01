@@ -15,6 +15,7 @@ const app = express();
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/libs/plyr', express.static(path.join(__dirname, 'node_modules/plyr/dist')));
 
 // Rate limit nas rotas de pagamento
 app.use(

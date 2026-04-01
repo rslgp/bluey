@@ -245,19 +245,24 @@ body {
 
 .cast-status { color: var(--muted); font-size: .82rem; }
 
-.cast-launcher {
-  --connected-color: var(--amber);
-  width: 32px; height: 32px;
-  cursor: pointer;
-  display: inline-block;
-  vertical-align: middle;
-}
+.cast-chrome-status { color: var(--amber); font-size: .82rem; font-weight: 500; }
 
-.cast-chrome-status {
-  color: var(--amber);
-  font-size: .82rem;
-  font-weight: 500;
+.btn-nav {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); width: 34px; height: 34px; border-radius: 8px;
+  cursor: pointer; transition: border-color .2s, color .2s; flex-shrink: 0;
 }
+.btn-nav:hover { border-color: var(--amber); color: var(--amber); }
+
+.btn-cast-tv {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: .5rem 1rem; border-radius: 8px;
+  font-family: var(--font-body); font-size: .88rem;
+  cursor: pointer; transition: border-color .2s, color .2s;
+}
+.btn-cast-tv:hover { border-color: var(--amber); color: var(--amber); }
 
 #cast-preview-wrap {
   max-width: 900px; margin: 0 auto;
@@ -472,6 +477,29 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* castable-video must never render visually — it is a headless Cast proxy */
+castable-video { display: none !important; }
+
+/* ─── Plyr Theme ─────────────────────────────────────────────────────────────── */
+.plyr {
+  --plyr-color-main:                #f5a623;
+  --plyr-video-background:          #0d0d0f;
+  --plyr-range-fill-background:     #f5a623;
+  --plyr-range-thumb-background:    #f5a623;
+  --plyr-range-track-height:        3px;
+  --plyr-video-controls-background: linear-gradient(transparent, rgba(13,13,15,0.95));
+  --plyr-control-icon-size:         18px;
+  --plyr-font-family:               'DM Sans', sans-serif;
+  --plyr-font-size-base:            14px;
+  --plyr-tooltip-background:        #141418;
+  --plyr-tooltip-color:             #e8e8ec;
+  --plyr-menu-background:           #141418;
+  --plyr-menu-color:                #e8e8ec;
+  --plyr-menu-border-color:         #2a2a32;
+}
+
+.player-overlay-title { z-index: 1; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {

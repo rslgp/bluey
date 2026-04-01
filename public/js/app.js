@@ -1,5 +1,6 @@
 // public/js/app.js  (ES Module)
 // ─── Imports ─────────────────────────────────────────────────────────────────
+import Plyr                                         from '/libs/plyr/plyr.mjs';
 import { initializeApp }                            from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          createUserWithEmailAndPassword,
@@ -21,7 +22,9 @@ let activeCorrelID = null;
 let pollInterval   = null;
 let mediaRecorder  = null;
 let recordedChunks = [];
-let castAvailable  = false;
+let player             = null;
+let videoList          = [];   // full catalog from /api/videos
+let currentVideoIndex  = -1;
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 const screenAuth   = document.getElementById('screen-auth');
@@ -47,11 +50,22 @@ const videoGrid    = document.getElementById('video-grid');
 
 const playerSection    = document.getElementById('player-section');
 const mainVideo        = document.getElementById('main-video');
+player = new Plyr(mainVideo, {
+  controls: ['play-large','play','rewind','fast-forward','progress',
+             'current-time','duration','mute','volume','settings','fullscreen'],
+  resetOnEnd: false,
+});
+
+
 const playerTitle      = document.getElementById('player-title');
 const btnScreencast    = document.getElementById('btn-screencast');
 const btnStopCast      = document.getElementById('btn-stop-cast');
 const castStatus       = document.getElementById('cast-status');
 const castChromeStatus = document.getElementById('cast-chrome-status');
+const castVideo        = document.getElementById('cast-video');
+const btnCastToTV      = document.getElementById('btn-cast-to-tv');
+const btnPrevEp        = document.getElementById('btn-prev-ep');
+const btnNextEp        = document.getElementById('btn-next-ep');
 const castPreviewW     = document.getElementById('cast-preview-wrap');
 const castPreview      = document.getElementById('cast-preview');
 const castDownload     = document.getElementById('cast-download');
@@ -189,6 +203,8 @@ async function loadVideos() {
   const res  = await fetch('/api/videos', { headers: { Authorization: `Bearer ${token}` } });
   const data = await res.json();
 
+  videoList = data.videos;  // keep full list for prev/next navigation
+
   videoGrid.innerHTML = '';
   data.videos.forEach((v, i) => {
     const card = buildCard(v, i);
@@ -220,7 +236,7 @@ function buildCard(v, index) {
   `;
 
   if (!v.locked) {
-    card.addEventListener('click', () => playVideo(v.id, v.title));
+    card.addEventListener('click', () => playVideo(v.id));
   } else {
     card.querySelector('.card-lock-cta')?.addEventListener('click', openPixModal);
   }
@@ -228,7 +244,7 @@ function buildCard(v, index) {
 }
 
 // ─── Video Player ─────────────────────────────────────────────────────────────
-async function playVideo(id, title) {
+async function playVideo(id) {
   const token = await getToken();
   const res   = await fetch(`/api/videos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 
@@ -239,90 +255,50 @@ async function playVideo(id, title) {
   }
 
   const video = await res.json();
-  playerTitle.textContent = title;
+
+  // Track position in the catalog for prev/next
+  const idx = videoList.findIndex(v => v.id === id);
+  currentVideoIndex = idx;
+  updateNavButtons();
+
+  playerTitle.textContent = video.title;
   playerSection.removeAttribute('hidden');
   playerSection.scrollIntoView({ behavior: 'smooth' });
   castPreviewW.setAttribute('hidden', '');
 
-  // If a Cast session is active, send to Chromecast
-  const castSession = castAvailable &&
-    cast.framework.CastContext.getInstance().getCurrentSession();
-
-  if (castSession) {
-    const mediaInfo = new chrome.cast.media.MediaInfo(video.url, 'video/mp4');
-    mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
-    mediaInfo.metadata.title = title;
-    mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
-    try {
-      await castSession.loadMedia(new chrome.cast.media.LoadRequest(mediaInfo));
-      mainVideo.removeAttribute('src');
-    } catch (e) {
-      console.error('[Cast] loadMedia error:', e);
-      mainVideo.src = video.url;
-      mainVideo.play().catch(() => {});
-    }
-  } else {
-    mainVideo.src = video.url;
-    mainVideo.play().catch(() => {});
+  // Keep castable-video in sync — if a Cast session is active, load() sends
+  // the new source to the Chromecast receiver immediately
+  castVideo.src   = video.url;
+  castVideo.title = video.title;
+  const isCasting = castVideo.remote?.state === 'connected';
+  if (isCasting) {
+    castVideo.load();
+    return; // let the Chromecast handle playback; don't start locally
   }
+
+  // Local Plyr playback
+  player.source = { type: 'video', sources: [{ src: video.url, type: 'video/mp4' }] };
+  player.play();
 }
 
-// ─── Screencast ───────────────────────────────────────────────────────────────
-btnScreencast.addEventListener('click', async () => {
-  try {
-    // getDisplayMedia captura a tela do usuário
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 30, displaySurface: 'monitor' },
-      audio: true,
-    });
+function updateNavButtons() {
+  btnPrevEp.hidden = currentVideoIndex <= 0 || videoList[currentVideoIndex - 1]?.locked;
+  btnNextEp.hidden = currentVideoIndex < 0 || currentVideoIndex >= videoList.length - 1 || videoList[currentVideoIndex + 1]?.locked;
+}
 
-    recordedChunks = [];
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? 'video/webm;codecs=vp9'
-      : 'video/webm';
+function playAdjacentEpisode(offset) {
+  const next = videoList[currentVideoIndex + offset];
+  if (next && !next.locked) playVideo(next.id);
+}
 
-    mediaRecorder = new MediaRecorder(stream, { mimeType });
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = finishRecording;
+btnPrevEp.addEventListener('click', () => playAdjacentEpisode(-1));
+btnNextEp.addEventListener('click', () => playAdjacentEpisode(+1));
 
-    // Para quando o usuário encerra o compartilhamento pelo browser
-    stream.getVideoTracks()[0].addEventListener('ended', stopScreencast);
-
-    mediaRecorder.start(1000);
-
-    btnScreencast.setAttribute('hidden', '');
-    btnStopCast.removeAttribute('hidden');
-    castStatus.textContent = '● Gravando tela…';
-    castPreviewW.setAttribute('hidden', '');
-
-  } catch (err) {
-    if (err.name !== 'NotAllowedError') {
-      castStatus.textContent = 'Erro ao iniciar captura: ' + err.message;
-    }
-  }
+// Auto-play next episode when current one ends
+player.on('ended', () => {
+  const next = videoList[currentVideoIndex + 1];
+  if (next && !next.locked) playVideo(next.id);
 });
-
-btnStopCast.addEventListener('click', stopScreencast);
-
-function stopScreencast() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-  }
-  btnStopCast.setAttribute('hidden', '');
-  btnScreencast.removeAttribute('hidden');
-  castStatus.textContent = '';
-}
-
-function finishRecording() {
-  const blob = new Blob(recordedChunks, { type: 'video/webm' });
-  const url  = URL.createObjectURL(blob);
-
-  castPreview.src = url;
-  castDownload.href = url;
-  castPreviewW.removeAttribute('hidden');
-  castStatus.textContent = '';
-}
 
 // ─── PIX Modal ────────────────────────────────────────────────────────────────
 btnUpgradeN.addEventListener('click', openPixModal);
@@ -421,23 +397,27 @@ async function refreshAfterPremium() {
   }
 }
 
-// ─── Chromecast ───────────────────────────────────────────────────────────────
-function initCast() {
-  castAvailable = true;
-  cast.framework.CastContext.getInstance().setOptions({
-    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-    autoJoinPolicy:        chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-  });
+// ─── castable-video (Chromecast via Remote Playback API) ──────────────────────
+// Show "Transmitir" button only when a Cast device is available
+castVideo.remote?.watchAvailability((available) => {
+  btnCastToTV.hidden = !available;
+}).catch(() => {
+  // Remote playback not supported (non-Chrome or no Cast devices configured)
+  btnCastToTV.hidden = true;
+});
 
-  cast.framework.CastContext.getInstance().addEventListener(
-    cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-    ({ castState }) => {
-      const connected = castState === cast.framework.CastState.CONNECTED;
-      castChromeStatus.textContent = connected ? '📺 Transmitindo para TV' : '';
-    }
-  );
-}
+// Clicking "Transmitir" opens the native Cast device picker
+btnCastToTV.addEventListener('click', () => castVideo.remote?.prompt());
 
-// Called by __onGCastApiAvailable (defined in index.html before cast_sender.js)
-window._castInit = initCast;
-if (window._castAvailable) initCast();
+// When Cast connects, pause Plyr (castable-video takes over audio/video)
+castVideo.remote?.addEventListener('connect', () => {
+  castChromeStatus.textContent = '📺 Transmitindo para TV';
+  btnCastToTV.textContent      = 'Parar transmissão';
+  if (player && !player.paused) player.pause();
+});
+
+// When Cast disconnects, restore button label
+castVideo.remote?.addEventListener('disconnect', () => {
+  castChromeStatus.textContent = '';
+  btnCastToTV.textContent      = 'Transmitir';
+});

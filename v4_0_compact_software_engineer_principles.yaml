@@ -1,0 +1,714 @@
+v4_0_Compact_Software_Engineering_Guidelines:
+  meta:
+    version: "4.0-compact"
+    last_updated: "2026-03"
+    purpose: "Compact LLM guidelines for code generation and review - enriched with canonical book references"
+    base_source: "v3_1_compact_software_engineer_principle.yaml"
+    canonical_sources:
+      clean_architecture: "Clean Architecture - Robert C. Martin (2017)"
+      clean_code: "Clean Code - Robert C. Martin (2008)"
+      code_complete: "Code Complete 2nd Ed. - Steve McConnell (2004)"
+      api_design_patterns: "API Design Patterns - JJ Geewax (2021)"
+      accelerate: "Accelerate - Forsgren, Humble, Kim (2018)"
+      observability_engineering: "Observability Engineering - Majors, Fong-Jones, Miranda (2022)"
+      refactoring: "Refactoring 2nd Ed. - Martin Fowler (2018)"
+      building_microservices: "Building Microservices 2nd Ed. - Sam Newman (2021)"
+      goos: "Growing Object-Oriented Software, Guided by Tests - Freeman & Pryce (2009)"
+      ddia: "Designing Data-Intensive Applications - Martin Kleppmann (2017)"
+
+  # ─────────────────────────────────────────────
+  # TIER REFERENCE
+  # ─────────────────────────────────────────────
+  tier_reference:
+    S_plus: ["SRP", "DRY", "Testing & Error Handling", "Architecture Boundaries"]
+    S: ["OCP", "LSP", "ISP", "DIP", "KISS", "Separation of Concerns", "Naming",
+        "Small Functions", "TD Management", "Defensive Programming"]
+    S_minus: ["Clarity", "Consistent Style", "CI/CD", "Maintainability Index",
+              "API Design", "SLO/SLI Observability"]
+    A_plus: ["Self-Documenting Code", "Continuous Improvement", "Refactoring",
+             "Observability", "DORA Metrics"]
+    A: ["Microservices", "IaC", "AI-Assisted Dev"]
+
+  # ─────────────────────────────────────────────
+  # CRITICAL METRICS
+  # Sources: Code Complete ch.19-24, Clean Code ch.3-10
+  # ─────────────────────────────────────────────
+  critical_metrics:
+    book_references:
+      - "Code Complete: complexity budgets, variable scope, routine cohesion"
+      - "Clean Code: function size, naming quality, class cohesion"
+    complexity:
+      cyclomatic: "≤10 good, ≤15 acceptable, >15 refactor"
+      cognitive: "≤15 good, ≤25 acceptable, >25 immediate attention"
+      nesting: "≤3 levels (Code Complete: deep nesting = design smell)"
+      accidental_vs_essential: >
+        Distinguish accidental complexity (reducible by better design) from
+        essential complexity (inherent to the problem). Eliminate accidental first.
+        (Code Complete ch.5)
+    size:
+      functions: "≤20 ideal, ≤65 good, 100 hard limit (Clean Code ch.3)"
+      classes: "≤200 ideal, ≤500 acceptable"
+      files: "≤500 ideal, ≤1000 acceptable"
+      routine_rationale: >
+        McConnell (Code Complete ch.7): routines 1-200 lines are defensible.
+        Below 3 lines loses abstraction value. Above 200 is a signal to decompose.
+    cohesion:
+      class_cohesion: ">0.5"
+      wmc: "≤14 good, ≤47 acceptable"
+      coupling: "≤5 low, ≤9 moderate (stable dependencies point inward - Clean Architecture)"
+    testing:
+      coverage: "70-80% branch (not 100%)"
+      pyramid: "70% unit, 20% integration, 10% E2E"
+      mutation_score: ">60% critical code (use cautiously)"
+      flaky_rate: "<5%"
+    technical_debt:
+      density: "<30 min/KLOC new code"
+      sprint_allocation: "15-20% capacity"
+      reduction_target: "35% over 2 years"
+    maintainability:
+      index: "≥85 good, 65-85 moderate, <65 difficult"
+      duplication: "<3%"
+    variable_scope:
+      principle: "Minimize variable scope (Code Complete ch.10): declare close to first use"
+      span: "Prefer ≤10 lines between declaration and last use"
+      live_time: "Minimize live time; short live time = fewer interference points"
+
+  # ─────────────────────────────────────────────
+  # SOLID AT A GLANCE
+  # Source: Clean Architecture Part III, Clean Code
+  # ─────────────────────────────────────────────
+  solid_quick:
+    book_reference: "Clean Architecture ch.7-11: each principle with architectural consequence"
+    SRP: >
+      One class, one responsibility. Cohesion >0.5, WMC ≤14/47.
+      Martin (Clean Architecture): a module should be responsible to one and only one
+      actor. Violations appear as merge conflicts between teams.
+    OCP: >
+      Open for extension, closed for modification. Use interfaces and composition.
+      Plugin model: new behavior added by adding new code, not modifying existing.
+    LSP: >
+      Subtypes must substitute base types without breaking behavior.
+      Violations break the Rectangle/Square contract; enforce via interface contracts.
+    ISP: >
+      Small role-specific interfaces, not fat interfaces.
+      Clean Architecture: fat interfaces create unnecessary coupling across modules.
+    DIP: >
+      Depend on abstractions, inject dependencies. High-level policies must not
+      depend on low-level details. The Dependency Rule: source code dependencies
+      point only inward. (Clean Architecture ch.5, ch.11)
+
+  # ─────────────────────────────────────────────
+  # ARCHITECTURE BOUNDARIES (NEW IN v4)
+  # Source: Clean Architecture Part V, VI
+  # ─────────────────────────────────────────────
+  architecture_boundaries:
+    book_reference: "Clean Architecture ch.17-25"
+    dependency_rule: >
+      Source code dependencies must always point inward, toward higher-level policies.
+      Nothing in an inner circle may know anything about an outer circle.
+    concentric_circles:
+      entities: "Enterprise business rules - most stable, least likely to change"
+      use_cases: "Application-specific business rules - orchestrate entities"
+      interface_adapters: "Controllers, presenters, gateways - translate between use cases and frameworks"
+      frameworks_drivers: "Databases, UI, external frameworks - outermost, most volatile"
+    screaming_architecture: >
+      The architecture should scream the intent of the system (e.g., healthcare system,
+      inventory system), not the framework (e.g., Rails app, Spring app).
+      Frameworks are details. Use cases are the architecture.
+    stable_dependencies_principle: >
+      Depend in the direction of stability. A component should not depend on
+      components that are more volatile than itself.
+    stable_abstractions_principle: >
+      Stable components should be abstract. Volatile components should be concrete.
+      Allows stable components to be extended without modification (OCP).
+    humble_object_pattern: >
+      Separate hard-to-test behavior (UI, DB, external services) from easy-to-test
+      logic. Puts the seam at the architectural boundary, maximizing testability.
+    plugin_model: >
+      Business rules are the core. Everything else (DB, UI, frameworks) is a plugin.
+      Design so that external details can be replaced without touching business logic.
+
+  # ─────────────────────────────────────────────
+  # DEFENSIVE PROGRAMMING (NEW IN v4)
+  # Source: Code Complete ch.8
+  # ─────────────────────────────────────────────
+  defensive_programming:
+    book_reference: "Code Complete ch.8: Defensive Programming"
+    principle: >
+      Protect your routines from invalid inputs. Assume callers will pass anything.
+      Do not let invalid data propagate through the system.
+    practices:
+      - "Validate all inputs at system/module boundaries, not deep inside logic"
+      - "Use assertions for conditions that should never be false (dev/test only)"
+      - "Use error handling for conditions that may occur in production"
+      - "Never return null - prefer Optional, Result types, or empty collections"
+      - "Fail fast: surface errors at origin, not at side effect"
+      - "Use barricades: validate externally-sourced data at a designated boundary layer"
+    assertion_guidelines:
+      - "Assert pre-conditions: what must be true on entry"
+      - "Assert post-conditions: what must be true on exit"
+      - "Assert invariants: what must always be true"
+      - "Disable assertions in production only if performance-critical and heavily tested"
+    error_handling_vs_assertions:
+      assertions: "Bugs - conditions that should never occur"
+      error_handling: "Anomalies - conditions expected to occur occasionally (bad input, I/O failure)"
+    barricade_pattern: >
+      Designate a perimeter (e.g., input validation layer, API boundary).
+      Data outside is dirty. Data inside is clean. Only the barricade does sanitization.
+
+  # ─────────────────────────────────────────────
+  # TESTING STRATEGY (EXPANDED IN v4)
+  # Sources: GOOS, Clean Code, Accelerate
+  # ─────────────────────────────────────────────
+  testing_strategy:
+    book_references:
+      - "GOOS ch.1-5: test-driven OO design, listening to tests"
+      - "Clean Code ch.9: F.I.R.S.T. principles"
+      - "Accelerate ch.4: continuous testing as a key predictor of delivery performance"
+    philosophy:
+      tdd_cycle: "Red (failing test) -> Green (minimal passing code) -> Refactor (clean)"
+      listen_to_tests: >
+        GOOS: if a test is hard to write, the design is telling you something.
+        Difficulty in testing is a design signal, not a test problem.
+      outside_in_tdd: >
+        Start with acceptance/integration tests that define behavior from the outside.
+        Let integration tests drive the need for unit tests on collaborators.
+    first_principles:
+      fast: "Unit tests run in milliseconds; slow tests are skipped"
+      independent: "No test depends on state left by another test"
+      repeatable: "Same result regardless of environment or order"
+      self_validating: "Pass or fail - no manual verification"
+      timely: "Written with or before production code, not after"
+    test_doubles:
+      stub: "Returns canned answers; used to isolate the subject from collaborators"
+      mock: "Verifies interaction expectations; use sparingly - tests behavior, not implementation"
+      fake: "Working implementation with shortcuts (e.g., in-memory DB)"
+      spy: "Records calls for later assertion"
+      guideline: "Prefer stubs over mocks (GOOS: mocks can couple tests to implementation)"
+    pyramid:
+      unit: "70% - isolated, fast, test one concept"
+      integration: "20% - real collaborators, real I/O boundaries"
+      e2e: "10% - full stack, smoke coverage of critical paths"
+    accelerate_link: >
+      Continuous testing (automated, run on commit) is one of 24 capabilities
+      that predict high software delivery performance. (Accelerate ch.4)
+    anti_patterns:
+      - "Testing implementation details instead of behavior"
+      - "Mocking everything (overspecification)"
+      - "Tests that pass when code is broken (false green)"
+      - "Shared mutable state between tests"
+      - "Testing getters/setters in isolation"
+
+  # ─────────────────────────────────────────────
+  # REFACTORING PATTERNS (NEW IN v4)
+  # Source: Refactoring 2nd Ed. - Fowler
+  # ─────────────────────────────────────────────
+  refactoring_patterns:
+    book_reference: "Refactoring 2nd Ed. - Fowler: catalog of 60+ mechanics"
+    principle: >
+      Refactoring = changing internal structure without changing observable behavior.
+      Always have a passing test suite before starting. Small, safe steps.
+    when_to_refactor:
+      rule_of_three: "First time: do it. Second time: duplicate. Third time: refactor."
+      preparatory: "Refactor before adding a feature to make adding it easier"
+      comprehension: "Refactor when reading code to understand it"
+      litter_pickup: "Boy Scout Rule: leave it better than you found it"
+      planned: "Only when justified by data (high-change area, high TD density)"
+    key_mechanics:
+      extract_function: "Move code fragment to a named function (most used refactoring)"
+      inline_function: "Replace trivial function with its body to remove indirection"
+      extract_variable: "Name a sub-expression to improve readability"
+      move_function: "Relocate to the class/module that uses it most"
+      replace_conditional_with_polymorphism: "OCP in practice"
+      introduce_parameter_object: "Group related parameters into a value object"
+      replace_primitive_with_object: "Encapsulate primitives that have behavior"
+      decompose_conditional: "Extract complex conditions into named functions"
+    code_smells_catalog:
+      long_method: "CC >10, >65 LOC - extract function"
+      large_class: ">500 LOC, WMC >47 - extract class"
+      long_parameter_list: ">4 params - introduce parameter object or preserve whole object"
+      divergent_change: "One class changed for different reasons - violates SRP, split"
+      shotgun_surgery: "One change touches many classes - consolidate"
+      feature_envy: "Method uses another object's data more than its own - move method"
+      data_clumps: "Same data fields appear together - extract class"
+      primitive_obsession: "Using primitives for domain concepts - replace with object"
+      switch_statements: "Same switch in multiple places - use polymorphism"
+      parallel_inheritance: "Every subclass in A needs a subclass in B - merge"
+      comments: "Comment explains WHAT not WHY - the code should explain WHAT"
+    safety_practices:
+      - "Run full test suite between each refactoring step"
+      - "Commit after each safe step (atomic commits)"
+      - "Never mix refactoring and feature work in the same commit"
+      - "Separate refactoring PRs from feature PRs"
+
+  # ─────────────────────────────────────────────
+  # API DESIGN (EXPANDED IN v4)
+  # Source: API Design Patterns - Geewax
+  # ─────────────────────────────────────────────
+  api_design:
+    book_reference: "API Design Patterns - Geewax: resource-oriented design, AIP standards"
+    resource_oriented_design:
+      principle: >
+        APIs should be organized around resources (nouns), not actions (verbs).
+        Resources are the things your API manages.
+      hierarchy: "Collection > Resource > Sub-collection > Sub-resource"
+      naming:
+        - "Collections: plural nouns (e.g., /users, /orders)"
+        - "Resources: singular noun with ID (e.g., /users/{userId})"
+        - "Use camelCase for JSON fields, kebab-case for URL paths"
+    standard_methods:
+      get: "Retrieve a resource or collection. Idempotent. No side effects."
+      list: "List a collection. Support pagination (cursor-based preferred over offset)."
+      create: "Create a new resource. Return 201 + Location header."
+      update: "Full or partial update. Prefer PATCH with field mask over PUT."
+      delete: "Soft-delete preferred for audit trails. Return 204 or the deleted resource."
+    field_masks:
+      principle: >
+        Geewax: use field masks for partial updates (PATCH) and partial responses.
+        Avoids accidental overwrites with full PUT and reduces bandwidth with sparse GETs.
+      format: "fields=name,email,address.city"
+    versioning:
+      strategies:
+        url_path: "/v1/users (most explicit, most common for breaking changes)"
+        header: "Accept: application/vnd.api+json;version=1"
+        query_param: "?version=1 (least preferred)"
+      compatibility:
+        backward_compatible: "Adding optional fields, adding endpoints, relaxing constraints"
+        breaking: "Removing fields, renaming fields, changing types, tightening constraints"
+      guideline: "Never break v1. Add v2 only for genuine semantic incompatibility."
+    long_running_operations:
+      pattern: >
+        For operations >100ms, return 202 Accepted with an Operation resource.
+        Poll via GET /operations/{operationId}. Operation has done, error, response fields.
+      states: "pending -> running -> done | error"
+    pagination:
+      preferred: "Cursor-based (opaque token): consistent under mutations, O(1) DB query"
+      avoid: "Offset-based for large or frequently-mutated collections"
+      response_shape: "{ data: [...], nextPageToken: 'abc', totalSize: 1000 }"
+    error_design:
+      format: "{ code: 404, message: 'User not found', details: [...] }"
+      http_semantics:
+        "400": "Bad request - client error in input"
+        "401": "Unauthenticated - no valid credentials"
+        "403": "Unauthorized - valid credentials, insufficient permissions"
+        "404": "Not found"
+        "409": "Conflict - resource state prevents operation"
+        "429": "Rate limited - include Retry-After header"
+        "500": "Server error - never expose stack traces"
+    idempotency:
+      principle: "GET, PUT, DELETE should be idempotent. POST should use Idempotency-Key header."
+      key: "Client provides UUID key; server returns same response for duplicate keys within TTL"
+    singleton_resources:
+      definition: "A resource with no ID because only one exists per parent (e.g., /users/{id}/profile)"
+      operations: "GET and PATCH only (no create/delete semantics)"
+
+  # ─────────────────────────────────────────────
+  # DORA METRICS AND LEAN DELIVERY (EXPANDED IN v4)
+  # Source: Accelerate - Forsgren, Humble, Kim
+  # ─────────────────────────────────────────────
+  dora_metrics:
+    book_reference: "Accelerate ch.2: Four Key Metrics of software delivery performance"
+    four_keys:
+      deployment_frequency:
+        definition: "How often the organization deploys to production"
+        elite: "On demand (multiple times/day)"
+        high: "Between once/day and once/week"
+        medium: "Between once/week and once/month"
+        low: "Between once/month and once every 6 months"
+      lead_time_for_changes:
+        definition: "Time from code commit to production deployment"
+        elite: "<1 hour"
+        high: "<1 day"
+        medium: "1 week to 1 month"
+        low: "1-6 months"
+      mean_time_to_restore:
+        definition: "Time to restore service after a production incident"
+        elite: "<1 hour"
+        high: "<1 day"
+        medium: "<1 week"
+        low: "1 week to 1 month"
+      change_failure_rate:
+        definition: "Percentage of deployments causing incidents requiring hotfix"
+        elite: "0-15%"
+        high: "0-15%"
+        medium: "0-15%"
+        low: "46-60%"
+    technical_practices_that_predict_performance:
+      - "Version control for all artifacts (code, config, tests, scripts)"
+      - "Trunk-based development (short-lived branches <1 day, no long-lived feature branches)"
+      - "Continuous integration (build + test on every commit)"
+      - "Test automation (automated unit, integration, acceptance)"
+      - "Deployment automation (no manual steps in deploy pipeline)"
+      - "Shift left on security (automated security testing in pipeline)"
+      - "Loosely coupled architecture (teams can deploy independently)"
+      - "Feature flags (decouple deploy from release)"
+      - "Monitoring and observability (detect issues before users do)"
+      - "Database change management (automated migrations, backward compatible)"
+    lean_management:
+      wip_limits: "Limit work in progress to improve flow and reduce context switching"
+      visual_management: "Make work visible; boards, dashboards"
+      feedback_loops: "Fast feedback from production to development"
+    organizational_culture:
+      westrum_model:
+        pathological: "Power-oriented; information withheld; failure punished"
+        bureaucratic: "Rule-oriented; information ignored; failure leads to judgement"
+        generative: "Performance-oriented; information actively sought; failure leads to inquiry"
+      finding: >
+        Generative culture predicts better software delivery AND organizational performance.
+        (Accelerate ch.3)
+
+  # ─────────────────────────────────────────────
+  # OBSERVABILITY (EXPANDED IN v4)
+  # Source: Observability Engineering - Majors, Fong-Jones, Miranda
+  # ─────────────────────────────────────────────
+  observability:
+    book_reference: "Observability Engineering: beyond 3 pillars to structured events and SLOs"
+    definition: >
+      Observability is the ability to understand the internal state of a system
+      from its external outputs alone. Not just monitoring known failure modes
+      but exploring unknown unknowns. (Observability Engineering ch.1)
+    structured_events:
+      principle: >
+        The fundamental unit is the wide structured event: a single blob of context
+        capturing everything that happened during a request. Richer than logs,
+        more explorable than metrics.
+      format: "JSON, wide (many fields), one event per request/operation"
+      cardinality: >
+        High-cardinality fields (userId, requestId, customerId) are the most
+        valuable for debugging. Classical metrics systems discard cardinality.
+        Choose tooling that preserves it (Honeycomb, Tempo, Jaeger).
+    three_pillars_evolved:
+      logs:
+        format: "Structured JSON only. No plain text in production."
+        levels: "ERROR (needs immediate action), WARN (needs investigation), INFO (business events), DEBUG (dev only)"
+        correlation: "Every log line carries trace_id and span_id"
+      metrics:
+        types: "Counter, Gauge, Histogram, Summary"
+        golden_signals: "Latency (p50/p95/p99), Traffic (req/s), Errors (rate %), Saturation (%)"
+        tool: "Prometheus + Grafana; expose /metrics endpoint"
+      traces:
+        model: "Spans form a tree representing a distributed request"
+        propagation: "W3C TraceContext headers (traceparent, tracestate)"
+        tool: "OpenTelemetry SDK (vendor-neutral) -> Jaeger, Tempo, or commercial"
+    slo_sli_sla:
+      sli:
+        definition: "Service Level Indicator: a quantitative measure of service behavior"
+        examples: "Request success rate, latency p99, data freshness, availability"
+      slo:
+        definition: "Service Level Objective: the target value for an SLI over a window"
+        example: "99.9% of requests succeed over a 30-day rolling window"
+        guideline: "Set SLOs lower than what users notice breaking. Start conservative."
+      error_budget:
+        definition: "100% minus SLO = permissible unreliability in the window"
+        use: "Gates risky deploys. Exhausted budget = stop features, fix reliability."
+        principle: "Error budgets create shared language between dev and ops teams."
+      sla:
+        definition: "Service Level Agreement: contractual commitment, usually to external customers"
+        guideline: "SLA should be lower than SLO to give internal buffer"
+    alerting:
+      principle: "Alert on symptoms (SLO burn rate), not causes (CPU >80%)"
+      burn_rate_alerting: >
+        Alert when SLO budget is being consumed faster than sustainable.
+        Fast burn (1h window): 14x burn rate. Slow burn (6h window): 3x burn rate.
+      runbooks: "Every alert has a linked runbook. No runbook = do not alert."
+    opentelemetry:
+      status: "Industry standard for instrumentation. Vendor-neutral. Use OTel SDK."
+      auto_instrumentation: "Use where available (Node.js, Python, Java) to minimize code changes"
+      manual_instrumentation: "Add custom spans and attributes for business-critical paths"
+    roi: "60% MTTR reduction with proper observability implementation"
+
+  # ─────────────────────────────────────────────
+  # MICROSERVICES DECISION FRAMEWORK (EXPANDED IN v4)
+  # Source: Building Microservices - Newman
+  # ─────────────────────────────────────────────
+  microservices:
+    book_reference: "Building Microservices 2nd Ed. - Newman: service boundaries, communication"
+    when: "Only with >10 developers and clear bounded contexts. Default to modular monolith first."
+    bounded_context:
+      definition: >
+        Newman (via DDD): the boundary within which a model is defined and applicable.
+        Services should align to bounded contexts, not technical layers.
+      guideline: "If you cannot draw the bounded context without consulting 3 teams, it is too small."
+    service_communication:
+      sync: "REST or gRPC for request-response. Avoid sync chains >3 deep."
+      async: "Events via message broker (Kafka, RabbitMQ) for temporal decoupling."
+      choosing: >
+        Default async for cross-service operations. Use sync only where
+        real-time response is required by the user.
+    patterns:
+      strangler_fig: "100% adoption for migrations. Intercept + redirect + remove iteratively."
+      api_gateway: "100% adoption. +15-20ms latency. Handles auth, rate-limit, routing."
+      cqrs: "Only for >70% read workloads. 40-60% read boost, 10-15% write penalty."
+      sidecar: "56% adoption. Inject cross-cutting concerns (auth, observability) without code changes."
+      saga: "Distributed transactions via choreography (events) or orchestration (coordinator)."
+      outbox: "Reliably publish events alongside DB writes without 2PC."
+    data_isolation:
+      principle: "Each service owns its data. No shared databases between services."
+      violation: "Shared DB = distributed monolith = worst of both worlds"
+    tradeoffs:
+      monolith: "50-100ms latency, 10-50K req/s, vertical scaling, simpler operationally"
+      microservices: "100-300ms latency, 5-20K req/s per service, horizontal scaling, operational complexity"
+    avoid: "Distributed monoliths: shared DBs, sync chains >3, always deployed together"
+    maturity_model:
+      1_modular_monolith: "Start here. Single deployable unit with well-defined internal modules."
+      2_service_extraction: "Extract only services under independent load or change cadence."
+      3_full_microservices: "Only after proving independent deployability in step 2."
+
+  # ─────────────────────────────────────────────
+  # ANTI-PATTERNS (EXPANDED IN v4)
+  # ─────────────────────────────────────────────
+  anti_patterns:
+    book_references:
+      - "Clean Architecture: screaming framework, big ball of mud"
+      - "Refactoring 2nd Ed: code smells catalog"
+      - "Building Microservices: distributed monolith"
+      - "Code Complete: accidental complexity patterns"
+    structural:
+      god_object: ">500 LOC, >20 methods, >10 deps, WMC >47"
+      spaghetti: "CC >15, nesting >4, Cognitive >25"
+      copy_paste: ">10 line duplicates, >3% duplication"
+      magic_literals: "Hardcoded numbers/strings in business logic"
+      primitive_obsession: "Using string/int for domain concepts (email, money, userId)"
+      data_clump: "Same 3+ parameters always traveling together - extract object"
+    process:
+      premature_opt: "Complex code without profiling data (Knuth: root of all evil)"
+      callback_hell: "Nesting >3 levels in async - use async/await or observable chains"
+      no_tests: "Shipping without test suite - no safety net for refactoring"
+    architectural:
+      distributed_monolith: "Services always deployed together, shared DBs, sync chains >3"
+      framework_core: "Framework is the architecture (violates screaming architecture)"
+      anemic_domain: "Domain objects are just data holders; all logic in services"
+      big_ball_of_mud: "No discernible architecture; changes everywhere affect everywhere"
+      wrong_service_boundary: "Service boundaries on technical layers, not business domains"
+
+  # ─────────────────────────────────────────────
+  # BEST PRACTICES RAPID CHECKLIST
+  # ─────────────────────────────────────────────
+  best_practices:
+    functions:
+      - "≤20 lines ideal, single level of abstraction (Clean Code ch.3)"
+      - "Descriptive names, verb-based (Clean Code ch.2)"
+      - "≤3-4 parameters; use parameter objects beyond that"
+      - "No side effects; command-query separation (Clean Code ch.6)"
+      - "Never return null; use Optional, Result, or empty collections"
+      - "Extract till you drop"
+    classes:
+      - "Single responsibility, high cohesion (Clean Architecture ch.7)"
+      - "≤200 LOC ideal"
+      - "Composition over inheritance"
+      - "Depend on abstractions, not concretions (DIP)"
+      - "Clear naming (nouns that reveal business intent)"
+    testing:
+      - "Write tests alongside code (TDD/BDD)"
+      - "F.I.R.S.T: Fast, Independent, Repeatable, Self-validating, Timely"
+      - "Test error paths as thoroughly as happy paths"
+      - "Listen to tests: hard to test = design problem (GOOS)"
+      - "Prefer stubs over mocks; test behavior not implementation"
+    error_handling:
+      - "Use exceptions, not return codes (Clean Code ch.7)"
+      - "Explicit error types, fail fast"
+      - "Clear error messages with context"
+      - "Separate from business logic"
+      - "Never swallow exceptions silently"
+      - "Validate at system boundaries (defensive programming)"
+    naming:
+      - "Reveal intent, searchable, pronounceable (Clean Code ch.2)"
+      - "Length proportional to scope"
+      - "Domain vocabulary (ubiquitous language)"
+      - "No abbreviations, no noise words (Manager, Processor, Info)"
+    code_style:
+      - "Automated formatters (Prettier, Black, gofmt)"
+      - "Linters in CI/CD"
+      - "Team standards over personal preference"
+      - "Boy Scout Rule: leave code better than you found it"
+
+  # ─────────────────────────────────────────────
+  # TECHNICAL DEBT MANAGEMENT
+  # ─────────────────────────────────────────────
+  technical_debt:
+    book_reference: "Refactoring 2nd Ed: when and how to refactor; Accelerate: TD as velocity predictor"
+    allocation: "15-20% sprint capacity + quarterly refactoring sprint"
+    prioritization: "Value 35%, Complaints 22%, Principal 18%, Interest 15%, Risk 10%"
+    critical_findings:
+      - "Only 7% admitted TD actually resolved without dedicated allocation"
+      - "Dedicated refactoring commits: 42% bug reduction vs 12% mixed"
+      - "Unmanaged TD grows 23% yearly with 15% maintenance overhead"
+      - "Components >60 min/KLOC show 42% longer lead times"
+      - "Accelerate: technical debt is a predictor of reduced deployment frequency"
+    workflow:
+      - "Track in issue system with business impact (not just technical description)"
+      - "CI/CD gates block if TD density increases >10%"
+      - "Boy Scout Rule: leave code better (Clean Code)"
+      - "Separate refactoring from features (Refactoring 2nd Ed.)"
+      - "Use Fowler rule of three before refactoring a pattern"
+
+  # ─────────────────────────────────────────────
+  # CI/CD ESSENTIALS
+  # Source: Accelerate ch.4, ch.5
+  # ─────────────────────────────────────────────
+  cicd:
+    book_reference: "Accelerate ch.4-5: continuous delivery as a key capability cluster"
+    metrics: "Build <10min, Deploy daily, Lead time <24h, MTTR <1h"
+    accelerate_capabilities:
+      - "Version control for all artifacts"
+      - "Deployment automation (zero manual steps)"
+      - "Continuous integration (build+test on every commit to trunk)"
+      - "Trunk-based development (short-lived branches)"
+      - "Test automation at all levels"
+      - "Shift left on security"
+      - "Database change management automation"
+    practices:
+      - "Automate: build, test, deploy"
+      - "Branch protection with required checks"
+      - "Feature flags for release decoupling"
+      - "Canary or blue-green deployments"
+      - "Build once, deploy same artifact"
+    outcomes: "200x deployment frequency, 50-63% fewer failures (Accelerate ch.2)"
+
+  # ─────────────────────────────────────────────
+  # AI-ASSISTED DEVELOPMENT
+  # ─────────────────────────────────────────────
+  ai_assisted:
+    effectiveness:
+      good_for: "Boilerplate, unit tests, documentation: 55.8% faster for simple tasks"
+      poor_for: "Complex algorithms, novel architecture, mature codebases: 19% SLOWER"
+    metrics: "Acceptance rate >30% indicates value; monitor with SPACE framework"
+    practices:
+      - "Always review generated code (especially error handling and edge cases)"
+      - "Provide rich context: architecture decisions, constraints, domain model"
+      - "Track acceptance rate + developer satisfaction"
+      - "Never blind trust for security-critical or concurrency code"
+      - "Validate generated tests actually test the right behavior (not just coverage)"
+
+  # ─────────────────────────────────────────────
+  # CODE REVIEW
+  # ─────────────────────────────────────────────
+  code_review:
+    primary_purpose: "Knowledge transfer (not just defect finding: only 15% comments relate to defects)"
+    best_practices:
+      - "PRs <400 LOC"
+      - "Rich context in descriptions (what, why, how to test)"
+      - "Explicit knowledge sharing alongside quality checks"
+      - "Automated tools supplement human review"
+      - "Separate refactoring PRs from feature PRs (Refactoring 2nd Ed.)"
+    llm_tools: "[Inference] 73.8% automated comment resolution, but 41% longer PR times - augment not replace"
+
+  # ─────────────────────────────────────────────
+  # SOLID + BEST PRACTICE ANTI-PATTERNS DETECTOR
+  # ─────────────────────────────────────────────
+  llm_prompts:
+    before_writing:
+      - "Is this one responsibility? (SRP - Clean Architecture)"
+      - "Can it be simpler? (KISS)"
+      - "Am I repeating myself? (DRY)"
+      - "Will this be testable? (DIP, Humble Object)"
+      - "Is the name clear? (Clean Code - Naming)"
+      - "Does the architecture scream the intent? (Screaming Architecture)"
+      - "Are boundaries respected? (Dependency Rule)"
+    during_review:
+      - "CC/Cognitive >15/25? (Complexity - Code Complete)"
+      - "Function >65 LOC? (Size - Clean Code)"
+      - "Test coverage <70%? (Testing)"
+      - "Duplication >3%? (DRY)"
+      - "Clear error handling? (Clean Code ch.7, Defensive Programming)"
+      - "Variable scope minimized? (Code Complete ch.10)"
+      - "Any code smell from Fowler catalog? (Refactoring 2nd Ed.)"
+    api_review:
+      - "Resource-oriented naming? (API Design Patterns)"
+      - "Backward-compatible change? (versioning)"
+      - "Pagination and field masks considered? (API Design Patterns)"
+      - "Error response shape consistent? (API Design Patterns)"
+    technical_debt:
+      - "Is this tracked with business impact? (TD Tracking)"
+      - "Is there a plan to pay this? (TD Management)"
+      - "Will this increase TD density >10%? (CI Gate)"
+      - "DORA metrics impacted? Lead time, CFR? (Accelerate)"
+
+  # ─────────────────────────────────────────────
+  # IMPLEMENTATION PRIORITY ORDER
+  # ─────────────────────────────────────────────
+  implementation_order:
+    1: "Testing & error handling (immediate safety, highest ROI - GOOS, Clean Code)"
+    2: "Architecture boundaries + SOLID (structural quality foundation - Clean Architecture)"
+    3: "DRY + KISS + Naming (reduce cognitive load - Clean Code)"
+    4: "Small functions and classes (enable comprehension - Code Complete, Clean Code)"
+    5: "Defensive programming (protect system boundaries - Code Complete ch.8)"
+    6: "TD management + refactoring mechanics (prevent 23% yearly accumulation - Refactoring)"
+    7: "CI/CD + DORA metrics (enable velocity - Accelerate)"
+    8: "Observability + SLOs (reduce MTTR 60% - Observability Engineering)"
+    9: "API design standards (stable contracts - API Design Patterns)"
+    10: "Advanced patterns: microservices, CQRS, Saga (context-dependent - Building Microservices)"
+
+  # ─────────────────────────────────────────────
+  # CONTEXT ADJUSTMENTS
+  # ─────────────────────────────────────────────
+  context_adjustments:
+    startup_mvp:
+      - "Coverage 50% initially; track TD for later (Accelerate: do not defer indefinitely)"
+      - "Focus on product-market fit; avoid premature microservices (Newman: start modular monolith)"
+      - "Simple observability: structured logs + one dashboard before advanced tracing"
+    enterprise_critical:
+      - "Coverage >80% critical paths"
+      - "Full observability with SLOs, error budgets, runbooks"
+      - "Formal code reviews, strict API versioning"
+      - "DORA elite tier as target (Accelerate)"
+    legacy_modernization:
+      - "Strangler Fig pattern for safe extraction (Newman)"
+      - "Write characterization tests before touching legacy code"
+      - "Refactor high-change areas first (Boy Scout Rule + Fowler)"
+      - "Introduce observability early so you can see what is breaking"
+
+  # ─────────────────────────────────────────────
+  # CALIBRATION METHODOLOGY
+  # ─────────────────────────────────────────────
+  calibration:
+    method: "Use 80th percentile of your project metrics as baseline (35% better precision)"
+    frequency: "Re-calibrate annually or per major release"
+    principle: "Literature thresholds are starting points, not universal laws (Code Complete ch.19)"
+
+  # ─────────────────────────────────────────────
+  # EXPECTED OUTCOMES TIMELINE
+  # ─────────────────────────────────────────────
+  outcomes:
+    3_months: "15% bug reduction, 20% faster reviews, 25% complexity reduction"
+    6_months: "30% TD density reduction, 40% test coverage improvement, 50% faster onboarding"
+    24_months: "35% total TD reduction, 40% bug reduction in refactored code, 200x deploy frequency"
+    observability: "60% MTTR reduction after full observability implementation"
+    dora_elite: "Deployment on demand, lead time <1h, MTTR <1h, CFR <15% (Accelerate)"
+
+  # ─────────────────────────────────────────────
+  # SYNTHESIS PRINCIPLES
+  # ─────────────────────────────────────────────
+  synthesis:
+    multiple_metrics: "Use Cyclomatic + Cognitive + MI together, not single indicators (Code Complete)"
+    calibrate: "80th percentile baseline, re-calibrate annually"
+    dedicated_time: "15-20% sprint capacity to TD (only 7% gets resolved otherwise)"
+    automate_augment: "[Inference] Tools augment judgment, do not replace (LLM reviews: 73.8% resolution but 41% longer)"
+    measure_dimensions: "TD density + lead time + velocity, not just one (Accelerate)"
+    listen_to_tests: "If testing is hard, the design is wrong (GOOS)"
+    architecture_screams: "The architecture should reveal intent, not framework (Clean Architecture)"
+    refactor_first: "Make the change easy, then make the easy change (Fowler)"
+
+  # ─────────────────────────────────────────────
+  # VALIDATED TOOLS QUICK REFERENCE
+  # ─────────────────────────────────────────────
+  tools:
+    quality: "SonarQube + PMD ensemble (F1 >70%)"
+    testing: "EvoSuite (71% coverage), PIT/Stryker mutation (use cautiously)"
+    microservices: "Service Cutter (decomposition), Kafka (events), gRPC (40-60% faster internal)"
+    observability: "Prometheus+Grafana (metrics), ELK/Loki (logs), Jaeger/Tempo (traces), OpenTelemetry (SDK)"
+    infrastructure: "Terraform/Ansible (provision), Checkov/tfsec (security scan)"
+    ai: "GitHub Copilot (33% acceptance baseline, monitor satisfaction)"
+    api: "OpenAPI/Swagger (contract-first), Postman (testing), spectral (linting)"
+
+  # ─────────────────────────────────────────────
+  # CRITICAL CORRECTIONS (carried from v3.1, confirmed)
+  # ─────────────────────────────────────────────
+  corrections:
+    td_timeline: "35% reduction over 2 YEARS not 12 months"
+    function_length: "100 hard limit not 65 (Clean Code + Code Complete both confirm)"
+    ai_effectiveness: "[Inference] Context-dependent: +55.8% simple tasks, -19% complex/experienced"
+    mutation_testing: "Weak correlation with real faults when controlling for suite size (use cautiously)"
+    coverage_target: "70-80% branch coverage, not 100% (diminishing returns - Code Complete ch.22)"
+    microservices_default: "Default to modular monolith first (Newman); microservices only when justified"
+    mocks_overuse: "[Inference] Overuse of mocks couples tests to implementation - prefer stubs (GOOS ch.4)"
