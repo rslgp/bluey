@@ -302,6 +302,31 @@ body {
 }
 .catalog-user { color: var(--muted); font-size: .85rem; }
 
+/* ─── Season collapsible ─────────────────────────────────────────────────────── */
+.season-group { margin-bottom: 2rem; }
+/* .season-group + .season-group { border-top: 1px solid var(--border); padding-top: 1.5rem; } */
+
+.season-header {
+  display: flex; align-items: center; gap: .75rem;
+  list-style: none; cursor: pointer;
+  padding: .5rem 0 1rem;
+  user-select: none;
+}
+.season-header::-webkit-details-marker { display: none; }
+
+.season-title {
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 700;
+  letter-spacing: -0.01em; color: var(--text);
+}
+.season-meta { color: var(--muted); font-size: .82rem; flex: 1; }
+.season-chevron {
+  color: var(--amber); font-size: .9rem;
+  transition: transform .2s;
+  display: inline-block;
+}
+.season-group[open] .season-chevron  { transform: rotate(0deg); }
+.season-group:not([open]) .season-chevron { transform: rotate(-90deg); }
+
 .video-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

@@ -19,8 +19,45 @@ export async function loadCatalog() {
   }).then(r => r.json());
 
   videoGrid.innerHTML = '';
-  videos.forEach((v, i) => videoGrid.appendChild(_buildCard(v, i)));
+  _groupByCategory(videos).forEach(({ category, items }) => {
+    videoGrid.appendChild(_buildSeason(category, items));
+  });
   return videos;
+}
+
+// ── Group preserving server order ─────────────────────────────────────────────
+function _groupByCategory(videos) {
+  const map = new Map();
+  videos.forEach(v => {
+    if (!map.has(v.category)) map.set(v.category, []);
+    map.get(v.category).push(v);
+  });
+  return [...map.entries()].map(([category, items]) => ({ category, items }));
+}
+
+// ── Season collapsible block ──────────────────────────────────────────────────
+function _buildSeason(category, items) {
+  const details  = document.createElement('details');
+  details.className = 'season-group';
+  details.open   = true;
+
+  const summary  = document.createElement('summary');
+  summary.className = 'season-header';
+  const free     = items.filter(v => !v.locked).length;
+  const total    = items.length;
+  summary.innerHTML = `
+    <span class="season-title">${category}</span>
+    <span class="season-meta">${total} episódios · ${free} grátis</span>
+    <span class="season-chevron">▾</span>
+  `;
+  details.appendChild(summary);
+
+  const grid = document.createElement('div');
+  grid.className = 'video-grid';
+  items.forEach((v, i) => grid.appendChild(_buildCard(v, i)));
+  details.appendChild(grid);
+
+  return details;
 }
 
 function _buildCard(v, index) {
