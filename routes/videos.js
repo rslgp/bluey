@@ -33,7 +33,6 @@ const VIDEOS = SEASON_RANGES.flatMap(({ season, fileIds }) =>
     const tier      = ep <= FREE_LIMIT ? 'free' : 'premium';
     const isPremium = tier === 'premium';
     const preview = meta_info_eps.preview_season[season][idx]
-    console.log(preview+"")
     return {
       id:          `bluey-s${season}-ep${ep}`,
       title:       `Bluey – Temporada ${season}, Ep. ${ep}${isPremium ? ' ✦ Premium' : ''}`,

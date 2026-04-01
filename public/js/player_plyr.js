@@ -1,33 +1,29 @@
-// Note: Imports removed as you are using CDN globals (videojs and Hls)
-import { getToken } from './auth.js'; 
+// public/js/player.js — Plyr + playback + episode navigation
+import Plyr          from '/libs/plyr/plyr.mjs';
+import { getToken }  from './auth.js';
 
 const playerSection = document.getElementById('player-section');
-const playerTitle = document.getElementById('player-title');
-const castPreviewW = document.getElementById('cast-preview-wrap');
-const btnPrevEp = document.getElementById('btn-prev-ep');
-const btnNextEp = document.getElementById('btn-next-ep');
-const videoEl = document.getElementById('main-video');
+const playerTitle   = document.getElementById('player-title');
+const castPreviewW  = document.getElementById('cast-preview-wrap');
+const btnPrevEp     = document.getElementById('btn-prev-ep');
+const btnNextEp     = document.getElementById('btn-next-ep');
 
-// Initialize Video.js
-const player = videojs(videoEl, {
-  controls: true,
-  preload: 'auto',
-  fluid: true, // Makes the player responsive
-  playbackRates: [0.5, 1, 1.5, 2]
+const player = new Plyr(document.getElementById('main-video'), {
+  controls: ['play-large','play','rewind','fast-forward','progress',
+             'current-time','duration','mute','volume','settings','fullscreen'],
+  resetOnEnd: false,
 });
 
-let hlsInstance = null;
-let _videoList = [];
+let _videoList    = [];
 let _currentIndex = -1;
 let _castVideoEl, _onUpgrade;
 
 export function initPlayer({ castVideoEl, onUpgrade }) {
   _castVideoEl = castVideoEl;
-  _onUpgrade = onUpgrade;
+  _onUpgrade   = onUpgrade;
 
   btnPrevEp.addEventListener('click', () => _playAdjacent(-1));
   btnNextEp.addEventListener('click', () => _playAdjacent(+1));
-
   player.on('ended', () => {
     const next = _videoList[_currentIndex + 1];
     if (next && !next.locked) playVideo(next.id);
@@ -43,9 +39,7 @@ export function getPlayer() { return player; }
 
 export async function playVideo(id) {
   const token = await getToken();
-  const res = await fetch(`/api/videos/${id}`, { 
-    headers: { Authorization: `Bearer ${token}` } 
-  });
+  const res   = await fetch(`/api/videos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 
   if (res.status === 403) {
     const d = await res.json();
@@ -62,7 +56,7 @@ export async function playVideo(id) {
   playerSection.scrollIntoView({ behavior: 'smooth' });
   castPreviewW.setAttribute('hidden', '');
 
-  _castVideoEl.src = video.url;
+  _castVideoEl.src   = video.url;
   _castVideoEl.title = video.title;
 
   if (_castVideoEl.remote?.state === 'connected') {
@@ -70,33 +64,8 @@ export async function playVideo(id) {
     return;
   }
 
-  // --- Clean up previous HLS instance ---
-  if (hlsInstance) {
-    hlsInstance.destroy();
-    hlsInstance = null;
-  }
-
-  // --- Playback Logic ---
-  if (video.url.includes('.m3u8')) {
-    // Check if browser supports HLS natively (Safari/iOS)
-    if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-      player.src({ src: video.url, type: 'application/vnd.apple.mpegurl' });
-      player.play();
-    } 
-    // Otherwise use HLS.js
-    else if (Hls.isSupported()) {
-      hlsInstance = new Hls();
-      hlsInstance.loadSource(video.url);
-      hlsInstance.attachMedia(videoEl);
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-        player.play();
-      });
-    }
-  } else {
-    // Standard MP4 Fallback
-    player.src({ src: video.url, type: 'video/mp4' });
-    player.play();
-  }
+  player.source = { type: 'video', sources: [{ src: video.url, type: 'video/mp4' }] };
+  player.play();
 }
 
 function _updateNavButtons() {
