@@ -159,7 +159,6 @@ export const meta_info_eps = {
 
   preview_season:{
     1:[
-    "https://m.media-amazon.com/images/M/MV5BYWU1YmQzMjEtMDNjOS00MGIyLWExY2ItZDAzNmU5NWViMGZmXkEyXkFqcGc@._V1_QL75_UX500_CR0,234,500,281_.jpg",
     "https://m.media-amazon.com/images/M/MV5BZjYxM2E1ZTktYTNiNC00NmU0LTg1OTMtNjg0MWFlOWY2MjdhXkEyXkFqcGc@._V1_QL75_UX500_CR0,0,500,281_.jpg",
     "https://m.media-amazon.com/images/M/MV5BYjJmMDhiYjctOGI0OS00MjNlLWIzZDItZjE0ZDVlMmExNjQzXkEyXkFqcGc@._V1_QL75_UX500_CR0,0,500,281_.jpg",
     "https://m.media-amazon.com/images/M/MV5BMTNmZGJjYzktYzk0Ny00MzBhLWEwMzktNjIwN2I3NjRhY2IzXkEyXkFqcGc@._V1_QL75_UX500_CR0,0,500,281_.jpg",
