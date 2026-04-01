@@ -1,73 +1,66 @@
 // routes/videos.js
 const express = require('express');
-const router = express.Router();
-const { requireAuth, requirePremium } = require('../middleware/authMiddleware');
+const router  = express.Router();
+const { requireAuth } = require('../middleware/authMiddleware');
+ 
+const BASE_URL    = 'https://archive.org/download/bluey-dublado-ptbr-temporada';
+const FREE_LIMIT  = 5; // free episodes per season
 
-// Catálogo de vídeos. Em produção, viria de um banco de dados.
-const VIDEOS = [
-  // ── FREE ──────────────────────────────────────────────────────────────────
-  {
-    id: 'bluey-s3-ep1',
-    title: 'Bluey – Temporada 3, Ep. 1',
-    description: 'As aventuras da família Heeler continuam nesta temporada cheia de imaginação.',
-    thumbnail: 'https://picsum.photos/seed/bluey1/640/360',
-    duration: '07:00',
-    tier: 'free',
-    url: 'https://dn710004.ca.archive.org/0/items/bluey-dublado-ptbr-temporada3/bluey-s3%2F147200.mp4',
-    category: 'Animação',
-  },
-  {
-    id: 'bluey-s3-ep2',
-    title: 'Bluey – Temporada 3, Ep. 2',
-    description: 'Bluey e Bingo inventam um novo jogo que vai envolver toda a família.',
-    thumbnail: 'https://picsum.photos/seed/bluey2/640/360',
-    duration: '07:00',
-    tier: 'free',
-    url: 'https://dn710004.ca.archive.org/0/items/bluey-dublado-ptbr-temporada3/bluey-s3%2F147200.mp4',
-    category: 'Animação',
-  },
-  // ── PREMIUM ───────────────────────────────────────────────────────────────
-  {
-    id: 'bluey-s3-ep3',
-    title: 'Bluey – Temporada 3, Ep. 3 ✦ Premium',
-    description: 'Episódio exclusivo para assinantes Premium.',
-    thumbnail: 'https://picsum.photos/seed/bluey3/640/360',
-    duration: '07:00',
-    tier: 'premium',
-    url: 'https://dn710004.ca.archive.org/0/items/bluey-dublado-ptbr-temporada3/bluey-s3%2F147200.mp4',
-    category: 'Animação',
-  },
-  {
-    id: 'bluey-s3-ep4',
-    title: 'Bluey – Temporada 3, Ep. 4 ✦ Premium',
-    description: 'Uma aventura especial disponível apenas para membros Premium.',
-    thumbnail: 'https://picsum.photos/seed/bluey4/640/360',
-    duration: '07:00',
-    tier: 'premium',
-    url: 'https://dn710004.ca.archive.org/0/items/bluey-dublado-ptbr-temporada3/bluey-s3%2F147200.mp4',
-    category: 'Animação',
-  },
+// ── URL builder ───────────────────────────────────────────────────────────────
+function episodeUrl(season, fileId) {
+  return `${BASE_URL}${season}/bluey-s${season}%2F${fileId}.mp4`;
+}
+
+// ── Range generator: [start, end] inclusive ───────────────────────────────────
+function range(start, end) {
+  const out = [];
+  for (let i = start; i <= end; i++) out.push(i);
+  return out;
+}
+
+// ── Season definitions ────────────────────────────────────────────────────────
+const SEASON_RANGES = [
+  { season: 1, fileIds: range(147092, 147142) },
+  { season: 2, fileIds: range(147143, 147193) },
+  { season: 3, fileIds: [...range(147194, 147230), ...range(186629, 186641)] },
 ];
 
-// GET /api/videos  →  lista sem a URL real (protege links premium)
+// ── Build catalog at startup (static — no per-request allocation) ─────────────
+const VIDEOS = SEASON_RANGES.flatMap(({ season, fileIds }) =>
+  fileIds.map((fileId, idx) => {
+    const ep       = idx + 1;
+    const tier     = ep <= FREE_LIMIT ? 'free' : 'premium';
+    const isPremium = tier === 'premium';
+    return {
+      id:          `bluey-s${season}-ep${ep}`,
+      title:       `Bluey – Temporada ${season}, Ep. ${ep}${isPremium ? ' ✦ Premium' : ''}`,
+      description: isPremium
+        ? `Episódio exclusivo para assinantes Premium.`
+        : `Bluey – Temporada ${season}, episódio ${ep}.`,
+      thumbnail:   `https://picsum.photos/seed/bluey-s${season}e${ep}/640/360`,
+      duration:    '07:00',
+      tier,
+      category:    `Temporada ${season}`,
+      url:         episodeUrl(season, fileId),
+    };
+  })
+);
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 router.get('/', requireAuth, (req, res) => {
-  const list = VIDEOS.map(({ url, ...meta }) => ({
+  const videos = VIDEOS.map(({ url, ...meta }) => ({
     ...meta,
     locked: meta.tier === 'premium' && !req.user.premium,
   }));
-  res.json({ videos: list, premium: req.user.premium });
+  res.json({ videos, premium: req.user.premium });
 });
 
-// GET /api/videos/:id  →  retorna URL apenas se autorizado
 router.get('/:id', requireAuth, (req, res) => {
-  const video = VIDEOS.find((v) => v.id === req.params.id);
+  const video = VIDEOS.find(v => v.id === req.params.id);
   if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
 
   if (video.tier === 'premium' && !req.user.premium) {
-    return res.status(403).json({
-      error: 'Conteúdo exclusivo Premium.',
-      upgrade: true,
-    });
+    return res.status(403).json({ error: 'Conteúdo exclusivo Premium.', upgrade: true });
   }
 
   res.json(video);
