@@ -295,8 +295,24 @@ body {
 }
 .catalog-header {
   display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
+.catalog-search-wrap { display: flex; gap: .75rem; margin-bottom: 1.5rem; }
+.catalog-select {
+  flex: 1; padding: .55rem 1rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--font-body); font-size: .95rem;
+  outline: none; cursor: pointer; transition: border-color .2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  padding-right: 2.2rem;
+}
+.catalog-select:focus { border-color: var(--amber); }
+.catalog-select:disabled { opacity: .4; cursor: not-allowed; }
+.search-empty { color: var(--muted); padding: 2rem 0; font-size: .95rem; }
 .catalog-title {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 800;
   letter-spacing: -0.02em;
