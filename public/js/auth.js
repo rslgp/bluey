@@ -26,7 +26,7 @@ export function getCurrentUserEmail() {
 export async function refreshClaims() {
   if (!_currentUser) return { isPremium: false };
   const result = await getIdTokenResult(_currentUser, true);
-  return { isPremium: result.claims.premium === true };
+  return { isPremium: _isPremiumActive(result.claims) };
 }
 
 export function signOut() { return _signOut(_auth); }
@@ -36,7 +36,7 @@ export function watchAuthState({ onLogin, onLogout }) {
     _currentUser = user ?? null;
     if (user) {
       const result = await getIdTokenResult(user, true);
-      await onLogin({ user, isPremium: result.claims.premium === true });
+      await onLogin({ user, isPremium: _isPremiumActive(result.claims) });
     } else {
       await onLogout();
     }
@@ -95,6 +95,10 @@ function _bindButton(id, action, showError) {
     catch (e) { showError(_friendlyError(e.code)); }
     finally   { btn.disabled = false; }
   });
+}
+
+function _isPremiumActive(claims) {
+  return claims.premium === true && claims.premiumUntil > Date.now();
 }
 
 function _friendlyError(code) {

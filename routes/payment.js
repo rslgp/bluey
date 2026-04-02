@@ -109,7 +109,8 @@ router.get('/pix/status/:correlationID', requireAuth, async (req, res) => {
 
     if (status === 'CONCLUIDA' && local.status !== 'CONCLUIDA') {
       const admin = getFirebaseAdmin();
-      await admin.auth().setCustomUserClaims(req.user.uid, { premium: true });
+      const premiumUntil = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      await admin.auth().setCustomUserClaims(req.user.uid, { premium: true, premiumUntil });
 
       local.status = 'CONCLUIDA';
       pendingCharges.set(txid, local);
@@ -143,7 +144,8 @@ router.post('/webhook', express.json(), async (req, res) => {
 
       try {
         const admin = getFirebaseAdmin();
-        await admin.auth().setCustomUserClaims(local.uid, { premium: true });
+        const premiumUntil = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        await admin.auth().setCustomUserClaims(local.uid, { premium: true, premiumUntil });
         local.status = 'CONCLUIDA';
         pendingCharges.set(txid, local);
         console.log(`[Webhook] Premium ativado uid=${local.uid} txid=${txid}`);
