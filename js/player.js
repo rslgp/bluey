@@ -57,6 +57,7 @@ export async function playVideo(id) {
 
   _currentIndex = _videoList.findIndex(v => v.id === id);
   _updateNavButtons();
+  localStorage.setItem('bluey_last_ep', id);
 
   playerTitle.textContent = video.title;
   playerSection.removeAttribute('hidden');

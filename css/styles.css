@@ -313,6 +313,24 @@ body {
 .catalog-select:focus { border-color: var(--amber); }
 .catalog-select:disabled { opacity: .4; cursor: not-allowed; }
 .search-empty { color: var(--muted); padding: 2rem 0; font-size: .95rem; }
+
+.continue-banner {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  background: var(--surface2); border: 1px solid var(--amber);
+  border-radius: 10px; padding: .65rem 1rem; margin-bottom: 1.25rem;
+}
+.continue-label { color: var(--amber); font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.continue-btn {
+  flex: 1; text-align: left; background: none; border: none;
+  color: var(--text); font-family: var(--font-body); font-size: .9rem;
+  cursor: pointer; padding: 0;
+}
+.continue-btn:hover { color: var(--amber); }
+.continue-dismiss {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: .85rem; padding: 0; flex-shrink: 0;
+}
+.continue-dismiss:hover { color: var(--text); }
 .catalog-title {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 800;
   letter-spacing: -0.02em;
