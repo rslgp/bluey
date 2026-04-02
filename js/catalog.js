@@ -1,26 +1,98 @@
 // public/js/catalog.js — video grid module
 
-const videoGrid = document.getElementById('video-grid');
+const videoGrid     = document.getElementById('video-grid');
+const seasonSelect  = document.getElementById('filter-season');
+const episodeSelect = document.getElementById('filter-episode');
+
+const PAGE_SIZE = 10;
 
 let _onPlay, _onUpgrade;
+let _allVideos = [];
 
 export function initCatalog({ onPlay, onUpgrade }) {
   _onPlay    = onPlay;
   _onUpgrade = onUpgrade;
+
+  seasonSelect.addEventListener('change', () => {
+    _populateEpisodes();
+    _render();
+  });
+  episodeSelect.addEventListener('input', _render);
 }
 
 export async function loadCatalog(isPremium) {
   const videos = await fetch('catalog.json').then(r => r.json());
-  const mapped = videos.map(v => ({ ...v, locked: v.tier === 'premium' && !isPremium }));
-
-  videoGrid.innerHTML = '';
-  _groupByCategory(mapped).forEach(({ category, items }) => {
-    videoGrid.appendChild(_buildSeason(category, items));
-  });
-  return mapped;
+  _allVideos = videos.map(v => ({ ...v, locked: v.tier === 'premium' && !isPremium }));
+  _populateSeasons();
+  _render();
+  return _allVideos;
 }
 
-// ── Group preserving server order ─────────────────────────────────────────────
+// ── Populate season dropdown from loaded data ────────────────────────────────
+function _populateSeasons() {
+  const categories = [...new Map(_allVideos.map(v => [v.category, v])).keys()];
+  seasonSelect.innerHTML = '<option value="">Todas as temporadas</option>';
+  categories.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    seasonSelect.appendChild(opt);
+  });
+  episodeSelect.innerHTML = '<option value="">Todos os episódios</option>';
+  episodeSelect.disabled = true;
+}
+
+// ── Populate episode dropdown for selected season ────────────────────────────
+function _populateEpisodes() {
+  const season = seasonSelect.value;
+  episodeSelect.value = '';
+
+  if (!season) {
+    episodeSelect.disabled = true;
+    episodeSelect.removeAttribute('max');
+    return;
+  }
+
+  const count = _allVideos.filter(v => v.category === season).length;
+  episodeSelect.max     = count;
+  episodeSelect.disabled = false;
+}
+
+// ── Render grid based on current filter selections ───────────────────────────
+function _render() {
+  const season  = seasonSelect.value;
+  const epNum   = parseInt(episodeSelect.value, 10);
+
+  let filtered = _allVideos;
+  if (season) filtered = filtered.filter(v => v.category === season);
+
+  // epNum: find the Nth episode within the filtered season list
+  const targetVideo = (season && epNum >= 1)
+    ? filtered[epNum - 1] ?? null
+    : null;
+
+  if (targetVideo) filtered = [targetVideo];
+
+  videoGrid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    videoGrid.innerHTML = '<p class="search-empty">Nenhum episódio encontrado.</p>';
+    return;
+  }
+
+  if (targetVideo) {
+    const grid = document.createElement('div');
+    grid.className = 'video-grid';
+    filtered.forEach((v, i) => grid.appendChild(_buildCard(v, i)));
+    videoGrid.appendChild(grid);
+  } else {
+    _groupByCategory(filtered).forEach(({ category, items }) => {
+      videoGrid.appendChild(_buildSeason(category, items));
+    });
+  }
+}
+
+// ── Group preserving order ────────────────────────────────────────────────────
 function _groupByCategory(videos) {
   const map = new Map();
   videos.forEach(v => {
@@ -49,8 +121,28 @@ function _buildSeason(category, items) {
 
   const grid = document.createElement('div');
   grid.className = 'video-grid';
-  items.forEach((v, i) => grid.appendChild(_buildCard(v, i)));
+
+  let shown = 0;
+
+  function renderMore() {
+    const batch = items.slice(shown, shown + PAGE_SIZE);
+    batch.forEach((v, i) => grid.appendChild(_buildCard(v, shown + i)));
+    shown += batch.length;
+
+    const old = details.querySelector('.btn-show-more');
+    if (old) old.remove();
+
+    if (shown < items.length) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-show-more';
+      btn.textContent = `Ver mais (${items.length - shown} restantes)`;
+      btn.addEventListener('click', renderMore);
+      details.appendChild(btn);
+    }
+  }
+
   details.appendChild(grid);
+  renderMore();
 
   return details;
 }
