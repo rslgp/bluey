@@ -1,6 +1,6 @@
 // public/js/app.js — orchestrator (bootstraps and wires all modules)
 // URL of the PIX payment microservice (update after deploying streamcast-pix)
-export const PIX_API_BASE = 'http://164.152.250.62:3004';
+export const PIX_API_BASE = 'https://pix.055190.xyz';
 // export const PIX_API_BASE = 'http://localhost:3001';
 
 import { initFirebase, watchAuthState, refreshClaims,
