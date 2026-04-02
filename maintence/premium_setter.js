@@ -19,7 +19,7 @@ const auth = getAuth(app);
 
 const uid = 'eQTDB5j45WXz4w2sp9kQumO0jXd2';
 
-await auth.setCustomUserClaims(uid, { premium: !false });
+await auth.setCustomUserClaims(uid, { premium: false });
 
 console.log(`Claims atualizadas para uid ${uid}`);
 process.exit(0);

@@ -1,5 +1,4 @@
 // public/js/catalog.js — video grid module
-import { getToken } from './auth.js';
 
 const videoGrid = document.getElementById('video-grid');
 
@@ -10,19 +9,15 @@ export function initCatalog({ onPlay, onUpgrade }) {
   _onUpgrade = onUpgrade;
 }
 
-export async function loadCatalog() {
-  const token = await getToken();
-  if (!token) return [];
-
-  const { videos } = await fetch('/api/videos', {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(r => r.json());
+export async function loadCatalog(isPremium) {
+  const videos = await fetch('catalog.json').then(r => r.json());
+  const mapped = videos.map(v => ({ ...v, locked: v.tier === 'premium' && !isPremium }));
 
   videoGrid.innerHTML = '';
-  _groupByCategory(videos).forEach(({ category, items }) => {
+  _groupByCategory(mapped).forEach(({ category, items }) => {
     videoGrid.appendChild(_buildSeason(category, items));
   });
-  return videos;
+  return mapped;
 }
 
 // ── Group preserving server order ─────────────────────────────────────────────

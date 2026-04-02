@@ -1,5 +1,4 @@
 // Note: Imports removed as you are using CDN globals (videojs and Hls)
-import { getToken } from './auth.js'; 
 
 const playerSection = document.getElementById('player-section');
 const playerTitle = document.getElementById('player-title');
@@ -12,7 +11,7 @@ const videoEl = document.getElementById('main-video');
 const player = videojs(videoEl, {
   controls: true,
   preload: 'auto',
-  fluid: true, // Makes the player responsive
+  fluid: true,
   playbackRates: [0.5, 1, 1.5, 2]
 });
 
@@ -20,6 +19,9 @@ let hlsInstance = null;
 let _videoList = [];
 let _currentIndex = -1;
 let _castVideoEl, _onUpgrade;
+let _isPremium = false;
+
+export function setIsPremium(v) { _isPremium = v; }
 
 export function initPlayer({ castVideoEl, onUpgrade }) {
   _castVideoEl = castVideoEl;
@@ -45,18 +47,14 @@ export function setVideoList(list) {
 export function getPlayer() { return player; }
 
 export async function playVideo(id) {
-  const token = await getToken();
-  const res = await fetch(`/api/videos/${id}`, { 
-    headers: { Authorization: `Bearer ${token}` } 
-  });
+  const video = _videoList.find(v => v.id === id);
+  if (!video) return;
 
-  if (res.status === 403) {
-    const d = await res.json();
-    if (d.upgrade) _onUpgrade();
+  if (video.tier === 'premium' && !_isPremium) {
+    _onUpgrade();
     return;
   }
 
-  const video = await res.json();
   _currentIndex = _videoList.findIndex(v => v.id === id);
   _updateNavButtons();
 
@@ -81,13 +79,10 @@ export async function playVideo(id) {
 
   // --- Playback Logic ---
   if (video.url.includes('.m3u8')) {
-    // Check if browser supports HLS natively (Safari/iOS)
     if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
       player.src({ src: video.url, type: 'application/vnd.apple.mpegurl' });
       player.play();
-    } 
-    // Otherwise use HLS.js
-    else if (Hls.isSupported()) {
+    } else if (Hls.isSupported()) {
       hlsInstance = new Hls();
       hlsInstance.loadSource(video.url);
       hlsInstance.attachMedia(videoEl);
@@ -96,7 +91,6 @@ export async function playVideo(id) {
       });
     }
   } else {
-    // Standard MP4 Fallback
     player.src({ src: video.url, type: 'video/mp4' });
     player.play();
   }
@@ -118,7 +112,6 @@ function _findPrevPlayable(fromIndex) {
   const currentCategory = _videoList[fromIndex]?.category;
   const immediatePrev = _videoList[fromIndex - 1];
   if (immediatePrev && !immediatePrev.locked) return immediatePrev;
-  // If blocked, find the last unlocked episode in a prior season
   for (let i = fromIndex - 1; i >= 0; i--) {
     if (_videoList[i].category !== currentCategory && !_videoList[i].locked) {
       return _videoList[i];

@@ -9,9 +9,15 @@ import { getAuth, signInWithEmailAndPassword,
 let _auth, _provider, _currentUser;
 
 export async function initFirebase() {
-  const config = await fetch('/api/firebase-config').then(r => r.json());
-  _auth        = getAuth(initializeApp(config));
-  _provider    = new GoogleAuthProvider();
+  const config = {
+    apiKey:            'AIzaSyDRm_kzXBilmuu53Zga7aacl_WaF3_-syk',
+    authDomain:        'bluey-cast.firebaseapp.com',
+    projectId:         'bluey-cast',
+    messagingSenderId: '118593400035',
+    appId:             '1:118593400035:web:ac2e09564071b77ddea9d6',
+  };
+  _auth     = getAuth(initializeApp(config));
+  _provider = new GoogleAuthProvider();
 }
 
 export function getToken() {

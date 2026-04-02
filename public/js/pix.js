@@ -1,5 +1,6 @@
 // public/js/pix.js — PIX payment modal
 import { getToken } from './auth.js';
+import { PIX_API_BASE } from './app.js';
 
 const modalPix      = document.getElementById('modal-pix');
 const modalClose    = document.getElementById('modal-close');
@@ -36,7 +37,7 @@ export async function openPixModal() {
   modalPix.removeAttribute('hidden');
   try {
     const token = await getToken();
-    const res   = await fetch('/api/payment/pix/create', {
+    const res   = await fetch(`${PIX_API_BASE}/pix/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     });
@@ -79,7 +80,7 @@ async function _checkStatus() {
   btnCheckPix.textContent = 'Verificando…';
   try {
     const token   = await getToken();
-    const { premium } = await fetch(`/api/payment/pix/status/${_activeCorrelID}`, {
+    const { premium } = await fetch(`${PIX_API_BASE}/pix/status/${_activeCorrelID}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json());
     _showStep(premium ? 'success' : 'error');
