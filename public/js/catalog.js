@@ -23,8 +23,42 @@ export function initCatalog({ onPlay, onUpgrade }) {
 export async function loadCatalog(isPremium) {
   const videos = await fetch('catalog.json').then(r => r.json());
   _allVideos = videos.map(v => ({ ...v, locked: v.tier === 'premium' && !isPremium }));
+  _renderContinueBanner();
   _render();
   return _allVideos;
+}
+
+export function getLastEpisodeId() {
+  return localStorage.getItem('bluey_last_ep');
+}
+
+function _renderContinueBanner() {
+  const existing = document.getElementById('continue-banner');
+  if (existing) existing.remove();
+
+  const lastId = localStorage.getItem('bluey_last_ep');
+  if (!lastId) return;
+
+  const video = _allVideos.find(v => v.id === lastId);
+  if (!video) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'continue-banner';
+  banner.className = 'continue-banner';
+  banner.innerHTML = `
+    <span class="continue-label">Continuar assistindo</span>
+    <button class="continue-btn">${video.title}</button>
+    <button class="continue-dismiss" title="Dispensar">✕</button>
+  `;
+  banner.querySelector('.continue-btn').addEventListener('click', () => {
+    _onPlay(video.id);
+  });
+  banner.querySelector('.continue-dismiss').addEventListener('click', () => {
+    localStorage.removeItem('bluey_last_ep');
+    banner.remove();
+  });
+
+  videoGrid.parentElement.insertBefore(banner, videoGrid);
 }
 
 // ── Populate episode input max for selected season ───────────────────────────
