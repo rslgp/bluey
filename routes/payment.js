@@ -46,7 +46,7 @@ router.post('/pix/create', requireAuth, async (req, res) => {
         devedor:             { nome: req.user.email, cpf: '06891530407' }, // CPF real em produção
         valor:               { original: PRICE_BRL },
         chave:               process.env.EFI_PIX_KEY,
-        solicitacaoPagador:  `StreamCast Premium`,
+        solicitacaoPagador:  `Blueycast Premium`,
         infoAdicionais: [
           { nome: 'uid',   valor: req.user.uid },
           { nome: 'plano', valor: 'premium_mensal' },

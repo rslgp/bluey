@@ -1,5 +1,5 @@
 {
-  "name": "streamcast",
+  "name": "Blueycast",
   "version": "1.0.0",
   "description": "Plataforma de streaming com screencast, auth Firebase e pagamentos PIX",
   "main": "server.js",

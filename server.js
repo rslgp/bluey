@@ -57,6 +57,6 @@ app.get('*', (req, res) => {
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\n🎬 StreamCast rodando em http://localhost:${PORT}`);
+  console.log(`\n🎬 Blueycast rodando em http://localhost:${PORT}`);
   console.log(`   Ambiente: ${process.env.NODE_ENV || 'development'}\n`);
 });

@@ -1,4 +1,4 @@
-# 🎬 StreamCast
+# 🎬 Blueycast
 
 Plataforma de streaming com autenticação Firebase, pagamentos via PIX e screencast de tela.
 
@@ -78,7 +78,7 @@ Acesse: http://localhost:3000
 ## Arquitetura
 
 ```
-streamcast/
+Blueycast/
 ├── server.js                 # Express server + static files
 ├── .env.example              # Template de variáveis de ambiente
 ├── middleware/
