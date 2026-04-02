@@ -2,6 +2,8 @@
 
 const videoGrid = document.getElementById('video-grid');
 
+const PAGE_SIZE = 10;
+
 let _onPlay, _onUpgrade;
 
 export function initCatalog({ onPlay, onUpgrade }) {
@@ -49,8 +51,29 @@ function _buildSeason(category, items) {
 
   const grid = document.createElement('div');
   grid.className = 'video-grid';
-  items.forEach((v, i) => grid.appendChild(_buildCard(v, i)));
+
+  let shown = 0;
+
+  function renderMore() {
+    const batch = items.slice(shown, shown + PAGE_SIZE);
+    batch.forEach((v, i) => grid.appendChild(_buildCard(v, shown + i)));
+    shown += batch.length;
+
+    // Remove old "show more" button if present
+    const old = details.querySelector('.btn-show-more');
+    if (old) old.remove();
+
+    if (shown < items.length) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-show-more';
+      btn.textContent = `Ver mais (${items.length - shown} restantes)`;
+      btn.addEventListener('click', renderMore);
+      details.appendChild(btn);
+    }
+  }
+
   details.appendChild(grid);
+  renderMore();
 
   return details;
 }

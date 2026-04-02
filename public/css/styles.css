@@ -307,6 +307,15 @@ body {
 .season-group { margin-bottom: 2rem; }
 /* .season-group + .season-group { border-top: 1px solid var(--border); padding-top: 1.5rem; } */
 
+.btn-show-more {
+  display: block; width: 100%; margin-top: 1rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); padding: .6rem 1rem; border-radius: 8px;
+  font-family: var(--font-body); font-size: .88rem;
+  cursor: pointer; transition: border-color .2s, color .2s;
+}
+.btn-show-more:hover { border-color: var(--amber); color: var(--amber); }
+
 .season-header {
   display: flex; align-items: center; gap: .75rem;
   list-style: none; cursor: pointer;
