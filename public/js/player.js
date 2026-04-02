@@ -29,8 +29,8 @@ export function initPlayer({ castVideoEl, onUpgrade }) {
   btnNextEp.addEventListener('click', () => _playAdjacent(+1));
 
   player.on('ended', () => {
-    const next = _videoList[_currentIndex + 1];
-    if (next && !next.locked) playVideo(next.id);
+    const next = _findNextPlayable(_currentIndex);
+    if (next) playVideo(next.id);
   });
 }
 
@@ -99,14 +99,53 @@ export async function playVideo(id) {
   }
 }
 
+function _findNextPlayable(fromIndex) {
+  const currentCategory = _videoList[fromIndex]?.category;
+  const immediateNext = _videoList[fromIndex + 1];
+  if (immediateNext && !immediateNext.locked) return immediateNext;
+  for (let i = fromIndex + 1; i < _videoList.length; i++) {
+    if (_videoList[i].category !== currentCategory && !_videoList[i].locked) {
+      return _videoList[i];
+    }
+  }
+  return null;
+}
+
+function _findPrevPlayable(fromIndex) {
+  const currentCategory = _videoList[fromIndex]?.category;
+  const immediatePrev = _videoList[fromIndex - 1];
+  if (immediatePrev && !immediatePrev.locked) return immediatePrev;
+  // If blocked, find the last unlocked episode in a prior season
+  for (let i = fromIndex - 1; i >= 0; i--) {
+    if (_videoList[i].category !== currentCategory && !_videoList[i].locked) {
+      return _videoList[i];
+    }
+  }
+  return null;
+}
+
 function _updateNavButtons() {
-  btnPrevEp.hidden = _currentIndex <= 0 || _videoList[_currentIndex - 1]?.locked;
-  btnNextEp.hidden = _currentIndex < 0
-    || _currentIndex >= _videoList.length - 1
-    || _videoList[_currentIndex + 1]?.locked;
+  const prevPlayable = _currentIndex >= 0 ? _findPrevPlayable(_currentIndex) : null;
+  btnPrevEp.hidden = !prevPlayable;
+  if (prevPlayable) {
+    const crossingSeason = prevPlayable.category !== _videoList[_currentIndex]?.category;
+    btnPrevEp.title = crossingSeason ? `Temporada anterior: ${prevPlayable.category}` : 'Episódio anterior';
+  }
+
+  const nextPlayable = _currentIndex >= 0 ? _findNextPlayable(_currentIndex) : null;
+  btnNextEp.hidden = !nextPlayable;
+  if (nextPlayable) {
+    const crossingSeason = nextPlayable.category !== _videoList[_currentIndex]?.category;
+    btnNextEp.title = crossingSeason ? `Próxima temporada: ${nextPlayable.category}` : 'Próximo episódio';
+  }
 }
 
 function _playAdjacent(offset) {
-  const target = _videoList[_currentIndex + offset];
-  if (target && !target.locked) playVideo(target.id);
+  if (offset === 1) {
+    const next = _findNextPlayable(_currentIndex);
+    if (next) playVideo(next.id);
+  } else {
+    const prev = _findPrevPlayable(_currentIndex);
+    if (prev) playVideo(prev.id);
+  }
 }
