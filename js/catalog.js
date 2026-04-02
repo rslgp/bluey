@@ -23,26 +23,11 @@ export function initCatalog({ onPlay, onUpgrade }) {
 export async function loadCatalog(isPremium) {
   const videos = await fetch('catalog.json').then(r => r.json());
   _allVideos = videos.map(v => ({ ...v, locked: v.tier === 'premium' && !isPremium }));
-  _populateSeasons();
   _render();
   return _allVideos;
 }
 
-// ── Populate season dropdown from loaded data ────────────────────────────────
-function _populateSeasons() {
-  const categories = [...new Map(_allVideos.map(v => [v.category, v])).keys()];
-  seasonSelect.innerHTML = '<option value="">Todas as temporadas</option>';
-  categories.forEach(cat => {
-    const opt = document.createElement('option');
-    opt.value = cat;
-    opt.textContent = cat;
-    seasonSelect.appendChild(opt);
-  });
-  episodeSelect.innerHTML = '<option value="">Todos os episódios</option>';
-  episodeSelect.disabled = true;
-}
-
-// ── Populate episode dropdown for selected season ────────────────────────────
+// ── Populate episode input max for selected season ───────────────────────────
 function _populateEpisodes() {
   const season = seasonSelect.value;
   episodeSelect.value = '';
