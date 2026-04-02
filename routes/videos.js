@@ -33,6 +33,7 @@ const VIDEOS = SEASON_RANGES.flatMap(({ season, fileIds }) =>
     const tier      = ep <= FREE_LIMIT ? 'free' : 'premium';
     const isPremium = tier === 'premium';
     const preview = meta_info_eps.preview_season[season][idx]
+    const rating = meta_info_eps.rating_season[season][idx]
     return {
       id:          `bluey-s${season}-ep${ep}`,
       title:       `Bluey – Temporada ${season}, Ep. ${ep}${isPremium ? ' ✦ Premium' : ''}`,
@@ -41,7 +42,7 @@ const VIDEOS = SEASON_RANGES.flatMap(({ season, fileIds }) =>
         : `Bluey – Temporada ${season}, episódio ${ep}.`,
       // thumbnail:   `https://picsum.photos/seed/bluey-s${season}e${ep}/640/360`,
       thumbnail: `${preview}`,
-      duration:    '07:00',
+      duration:    `⭐${rating} /10`,
       tier,
       category:    `Temporada ${season}`,
       url:         episodeUrl(season, fileId),
