@@ -28,10 +28,13 @@ export function initPlayer({ castVideoEl, onUpgrade }) {
   btnPrevEp.addEventListener('click', () => _playAdjacent(-1));
   btnNextEp.addEventListener('click', () => _playAdjacent(+1));
 
-  player.on('ended', () => {
+  const _playNext = () => {
     const next = _findNextPlayable(_currentIndex);
     if (next) playVideo(next.id);
-  });
+  };
+
+  player.on('ended', _playNext);
+  castVideoEl.addEventListener('ended', _playNext);
 }
 
 export function setVideoList(list) {
