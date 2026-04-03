@@ -48,9 +48,13 @@ app.get('/api/firebase-config', (_, res) => {
 });
 
 // Retorna o app para qualquer rota não-API (SPA fallback)
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+app.get('/{*splat}', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not found' });
+  }else if (req.path === '/bluey') {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }else {
+    res.redirect('/bluey');
   }
 });
 
