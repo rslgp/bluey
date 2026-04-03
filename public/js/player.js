@@ -66,6 +66,11 @@ export async function playVideo(id) {
   playerSection.scrollIntoView({ behavior: 'smooth' });
   castPreviewW.setAttribute('hidden', '');
 
+  // Request portrait fullscreen — must run synchronously in the user-gesture call chain
+  videoEl.requestFullscreen?.()
+    .then(() => screen.orientation.lock?.('portrait-primary').catch(() => {}))
+    .catch(() => {});
+
   _castVideoEl.src = video.url;
   _castVideoEl.title = video.title;
 
