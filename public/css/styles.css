@@ -249,9 +249,10 @@ body {
 .cast-chrome-status { color: var(--amber); font-size: .82rem; font-weight: 500; }
 
 .btn-nav {
+  width: 44pt !important; height: 44pt !important;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); width: 34px; height: 34px; border-radius: 8px;
+  color: var(--text); border-radius: 8px;
   cursor: pointer; transition: border-color .2s, color .2s; flex-shrink: 0;
 }
 .btn-nav:hover { border-color: var(--amber); color: var(--amber); }
