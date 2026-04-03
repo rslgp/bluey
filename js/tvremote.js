@@ -1,15 +1,18 @@
-// public/js/tvremote.js — TV remote control via Server-Sent Events
+// public/js/tvremote.js — TV remote control via PeerJS (WebRTC P2P)
+// No server relay needed — works over the internet and on GitHub Pages.
 
-// Named constants eliminate magic strings shared between server and client
-const MSG = Object.freeze({
-  CODE:            'code',
-  PHONE_CONNECTED: 'phone_connected',
-  PLAY:            'play',
-  PAUSE:           'pause',
-  RESUME:          'resume',
-});
+const PEER_PREFIX = 'bc'; // namespaces peers on the shared public PeerJS server
 
-let _pairedCode = null; // room code this device joined as phone controller
+const MSG = Object.freeze({ PLAY: 'play', PAUSE: 'pause', RESUME: 'resume' });
+
+let _peer     = null;
+let _conn     = null;
+let _isPaired = false;
+
+function _destroyPeer() {
+  _isPaired = false; _conn = null;
+  if (_peer) { try { _peer.destroy(); } catch (_) {} _peer = null; }
+}
 
 // ── TV side ───────────────────────────────────────────────────────────────────
 export function activateTVMode({ onPlay, onPause, onResume }) {
@@ -17,59 +20,61 @@ export function activateTVMode({ onPlay, onPause, onResume }) {
   const tvCodeEl    = document.getElementById('tv-code-display');
   const tvStatusEl  = document.getElementById('tv-mode-status');
 
-  const evtSource = new EventSource('/api/tv/register');
+  _destroyPeer();
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  _peer = new Peer(PEER_PREFIX + code, { debug: 0 });
 
-  evtSource.onmessage = ({ data }) => {
-    const msg = JSON.parse(data);
-    switch (msg.type) {
-      case MSG.CODE:
-        tvCodeEl.textContent = msg.code;
-        tvModePanel.removeAttribute('hidden');
-        tvStatusEl.textContent = 'Aguardando celular…';
-        break;
-      case MSG.PHONE_CONNECTED:
-        tvStatusEl.textContent = '📱 Celular conectado!';
-        break;
-      case MSG.PLAY:   onPlay(msg.videoId); break;
-      case MSG.PAUSE:  onPause?.();         break;
-      case MSG.RESUME: onResume?.();        break;
-    }
-  };
+  _peer.on('open', () => {
+    tvCodeEl.textContent = code;
+    tvModePanel.removeAttribute('hidden');
+    tvStatusEl.textContent = 'Aguardando celular…';
+  });
 
-  evtSource.onerror = () => {
-    tvStatusEl.textContent = 'Conexão perdida. Recarregue a página.';
-    console.error('[TVRemote] SSE connection lost');
-  };
+  _peer.on('connection', c => {
+    _conn = c;
+    c.on('open',  () => { _isPaired = true; tvStatusEl.textContent = '📱 Celular conectado!'; });
+    c.on('data',  msg => {
+      switch (msg.type) {
+        case MSG.PLAY:   onPlay(msg.videoId); break;
+        case MSG.PAUSE:  onPause?.();         break;
+        case MSG.RESUME: onResume?.();        break;
+      }
+    });
+    c.on('close', () => { _isPaired = false; tvStatusEl.textContent = 'Celular desconectado.'; });
+    c.on('error', () => { _isPaired = false; tvStatusEl.textContent = 'Erro de conexão.'; });
+  });
+
+  _peer.on('error', err => {
+    tvStatusEl.textContent = 'Erro ao gerar código. Recarregue.';
+    console.error('[TVRemote] PeerJS error:', err);
+  });
 }
 
 // ── Phone side ────────────────────────────────────────────────────────────────
-export async function joinTV(code) {
-  const res = await fetch('/api/tv/join', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: String(code) }),
+export function joinTV(code) {
+  return new Promise((resolve, reject) => {
+    _destroyPeer();
+    _peer = new Peer(undefined, { debug: 0 });
+    _peer.on('open', () => {
+      _conn = _peer.connect(PEER_PREFIX + String(code), { reliable: true });
+      _conn.on('open',  () => { _isPaired = true; resolve(); });
+      _conn.on('close', () => { _isPaired = false; });
+      _conn.on('error', () => reject(new Error('Conexão falhou')));
+      setTimeout(() => { if (!_isPaired) reject(new Error('Timeout')); }, 9000);
+    });
+    _peer.on('error', () => reject(new Error('Código inválido ou TV offline.')));
   });
-  if (!res.ok) throw new Error('Código inválido');
-  _pairedCode = String(code);
 }
 
-export function disconnectTV() { _pairedCode = null; }
+export function disconnectTV()    { _destroyPeer(); }
+export function isConnectedToTV() { return _isPaired; }
 
-export function isConnectedToTV() { return _pairedCode !== null; }
-
-// DRY: single fetch helper for all phone → TV commands
-async function _sendCommand(endpoint, body) {
-  if (!_pairedCode) return;
-  try {
-    await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: _pairedCode, ...body }),
-    });
-  } catch (err) {
-    console.error(`[TVRemote] Command failed (${endpoint}):`, err);
+// DRY: single send helper for all phone → TV commands
+function _send(payload) {
+  if (_conn && _conn.open) try { _conn.send(payload); } catch (err) {
+    console.error('[TVRemote] Send failed:', err);
   }
 }
 
-export const playOnTV = (videoId) => _sendCommand('/api/tv/play',  { videoId });
-export const pauseTV  = (paused)  => _sendCommand('/api/tv/pause', { paused });
+export const playOnTV = (videoId) => _send({ type: MSG.PLAY,  videoId });
+export const pauseTV  = (paused)  => _send({ type: paused ? MSG.PAUSE : MSG.RESUME });
