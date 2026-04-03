@@ -12,7 +12,8 @@ import { initPix, openPixModal }                from './pix.js';
 // import { initScreencast }                       from './screencast.js';
 import { initCast }                             from './cast.js';
 import { activateTVMode, joinTV, disconnectTV,
-         isConnectedToTV, playOnTV, pauseTV }   from './tvremote.js';
+         isConnectedToTV, playOnTV, pauseTV,
+         fullscreenTV }                         from './tvremote.js';
 
 // ─── Stable DOM refs (used across multiple concerns) ─────────────────────────
 const screenAuth         = document.getElementById('screen-auth');
@@ -82,6 +83,7 @@ function _initTVControls() {
   const btnTVPrev         = document.getElementById('btn-tv-prev');
   const btnTVPause        = document.getElementById('btn-tv-pause');
   const btnTVNext         = document.getElementById('btn-tv-next');
+  const btnTVFullscreen   = document.getElementById('btn-tv-fullscreen');
 
   btnUseAsTV.addEventListener('click', () => {
     btnUseAsTV.hidden   = true;
@@ -148,6 +150,8 @@ function _initTVControls() {
     _tv.currentId = next.id;
     playOnTV(next.id);
   });
+
+  btnTVFullscreen.addEventListener('click', fullscreenTV);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 
 const PEER_PREFIX = 'bc'; // namespaces peers on the shared public PeerJS server
 
-const MSG = Object.freeze({ PLAY: 'play', PAUSE: 'pause', RESUME: 'resume' });
+const MSG = Object.freeze({ PLAY: 'play', PAUSE: 'pause', RESUME: 'resume', FULLSCREEN: 'fullscreen' });
 
 let _peer     = null;
 let _conn     = null;
@@ -35,9 +35,13 @@ export function activateTVMode({ onPlay, onPause, onResume }) {
     c.on('open',  () => { _isPaired = true; tvStatusEl.textContent = '📱 Celular conectado!'; });
     c.on('data',  msg => {
       switch (msg.type) {
-        case MSG.PLAY:   onPlay(msg.videoId); break;
-        case MSG.PAUSE:  onPause?.();         break;
-        case MSG.RESUME: onResume?.();        break;
+        case MSG.PLAY:       onPlay(msg.videoId); break;
+        case MSG.PAUSE:      onPause?.();         break;
+        case MSG.RESUME:     onResume?.();        break;
+        case MSG.FULLSCREEN:
+          if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+          else document.documentElement.requestFullscreen?.().catch(() => {});
+          break;
       }
     });
     c.on('close', () => { _isPaired = false; tvStatusEl.textContent = 'Celular desconectado.'; });
@@ -76,5 +80,6 @@ function _send(payload) {
   }
 }
 
-export const playOnTV = (videoId) => _send({ type: MSG.PLAY,  videoId });
-export const pauseTV  = (paused)  => _send({ type: paused ? MSG.PAUSE : MSG.RESUME });
+export const playOnTV      = (videoId) => _send({ type: MSG.PLAY,  videoId });
+export const pauseTV       = (paused)  => _send({ type: paused ? MSG.PAUSE : MSG.RESUME });
+export const fullscreenTV  = ()        => _send({ type: MSG.FULLSCREEN });
