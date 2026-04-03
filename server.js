@@ -47,6 +47,43 @@ app.get('/api/firebase-config', (_, res) => {
   });
 });
 
+// ── TV Remote (SSE-based, no extra packages) ──────────────────────────────────
+const _tvRooms = new Map(); // code → res
+
+function _genTVCode() {
+  let code;
+  do { code = String(Math.floor(Math.random() * 9000) + 1000); }
+  while (_tvRooms.has(code));
+  return code;
+}
+
+app.get('/api/tv/register', (req, res) => {
+  const code = _genTVCode();
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  res.write(`data: ${JSON.stringify({ type: 'code', code })}\n\n`);
+  _tvRooms.set(code, res);
+  req.on('close', () => _tvRooms.delete(code));
+});
+
+app.post('/api/tv/join', (req, res) => {
+  const { code } = req.body;
+  const tvRes = _tvRooms.get(String(code));
+  if (!tvRes) return res.status(404).json({ error: 'Código inválido' });
+  tvRes.write(`data: ${JSON.stringify({ type: 'phone_connected' })}\n\n`);
+  res.json({ ok: true });
+});
+
+app.post('/api/tv/play', (req, res) => {
+  const { code, videoId } = req.body;
+  const tvRes = _tvRooms.get(String(code));
+  if (!tvRes) return res.status(410).json({ error: 'Sessão encerrada' });
+  tvRes.write(`data: ${JSON.stringify({ type: 'play', videoId })}\n\n`);
+  res.json({ ok: true });
+});
+
 // Retorna o app para qualquer rota não-API (SPA fallback)
 app.get('/{*splat}', (req, res) => {
   if (req.path.startsWith('/api')) {

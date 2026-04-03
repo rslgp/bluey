@@ -550,6 +550,37 @@ body {
 /* castable-video must never render visually — it is a headless Cast proxy */
 castable-video { display: none !important; }
 
+/* ─── TV Remote UI ───────────────────────────────────────────────────────────── */
+.tv-mode-panel {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.tv-mode-label { color: var(--muted); font-size: .85rem; margin-bottom: .5rem; }
+.tv-code-display {
+  font-family: var(--font-display);
+  font-size: 4rem; font-weight: 800;
+  letter-spacing: .3em;
+  color: var(--amber);
+}
+.tv-mode-status { color: var(--muted); font-size: .85rem; margin-top: .5rem; }
+
+.phone-control-panel {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  padding: .75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.tv-code-input { width: 13rem; text-align: center; letter-spacing: .2em; }
+.tv-connect-status { color: var(--amber); font-size: .85rem; }
+.btn-disconnect-tv {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 6px;
+  padding: .3rem .75rem; font-size: .8rem; cursor: pointer;
+}
+.btn-disconnect-tv:hover { border-color: var(--red); color: var(--red); }
+
 /* ─── Plyr Theme ─────────────────────────────────────────────────────────────── */
 .plyr {
   --plyr-color-main:                #f5a623;
