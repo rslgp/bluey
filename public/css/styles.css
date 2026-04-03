@@ -580,6 +580,7 @@ castable-video { display: none !important; }
   padding: .3rem .75rem; font-size: .8rem; cursor: pointer;
 }
 .btn-disconnect-tv:hover { border-color: var(--red); color: var(--red); }
+.tv-nav-buttons { display: flex; gap: .35rem; align-items: center; }
 
 /* ─── Plyr Theme ─────────────────────────────────────────────────────────────── */
 .plyr {

@@ -7,7 +7,8 @@ import { initFirebase, watchAuthState, refreshClaims,
          getCurrentUserEmail, initAuthForms }   from './auth.js';
 import { initCatalog, loadCatalog }             from './catalog.js';
 import { initPlayer, playVideo, setVideoList,
-         getPlayer, setIsPremium }              from './player.js';
+         getPlayer, setIsPremium,
+         getVideoList }                         from './player.js';
 import { initPix, openPixModal }                from './pix.js';
 // import { initScreencast }                       from './screencast.js';
 import { initCast }                             from './cast.js';
@@ -32,13 +33,21 @@ const tvCodeInput        = document.getElementById('tv-code-input');
 const btnJoinTV          = document.getElementById('btn-join-tv');
 const tvConnectStatus    = document.getElementById('tv-connect-status');
 const btnDisconnectTV    = document.getElementById('btn-disconnect-tv');
+const tvNavButtons       = document.getElementById('tv-nav-buttons');
+const btnTVPrev          = document.getElementById('btn-tv-prev');
+const btnTVNext          = document.getElementById('btn-tv-next');
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 await initFirebase();
 
+// Track last video sent to TV for prev/next navigation
+let _tvCurrentId = null;
+
 // Catalog play: route to TV if connected, else local player
 function _onPlay(id) {
   if (isConnectedToTV()) {
+    _tvCurrentId = id;
+    tvNavButtons.removeAttribute('hidden');
     playOnTV(id);
   } else {
     playVideo(id);
@@ -85,12 +94,36 @@ btnJoinTV.addEventListener('click', async () => {
 
 btnDisconnectTV.addEventListener('click', () => {
   disconnectTV();
+  _tvCurrentId                = null;
   tvConnectStatus.textContent = '';
   tvCodeInput.value           = '';
   tvCodeInput.removeAttribute('hidden');
   btnJoinTV.removeAttribute('hidden');
   btnDisconnectTV.setAttribute('hidden', '');
+  tvNavButtons.setAttribute('hidden', '');
   phoneControlPanel.setAttribute('hidden', '');
+});
+
+// ─── TV nav buttons (prev/next for phone-controlled TV) ───────────────────────
+function _findAdjacentTV(offset) {
+  const list = getVideoList();
+  const idx  = list.findIndex(v => v.id === _tvCurrentId);
+  if (idx === -1) return null;
+  const step = offset > 0 ? 1 : -1;
+  for (let i = idx + step; i >= 0 && i < list.length; i += step) {
+    if (!list[i].locked) return list[i];
+  }
+  return null;
+}
+
+btnTVPrev.addEventListener('click', () => {
+  const prev = _findAdjacentTV(-1);
+  if (prev) { _tvCurrentId = prev.id; playOnTV(prev.id); }
+});
+
+btnTVNext.addEventListener('click', () => {
+  const next = _findAdjacentTV(+1);
+  if (next) { _tvCurrentId = next.id; playOnTV(next.id); }
 });
 
 // ─── Auth state ───────────────────────────────────────────────────────────────
