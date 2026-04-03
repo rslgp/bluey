@@ -46,7 +46,7 @@ function _renderContinueBanner() {
   banner.id = 'continue-banner';
   banner.className = 'continue-banner';
   banner.innerHTML = `
-    <span class="continue-label">Continuar assistindo</span>
+    <span class="continue-label continue-btn">Continuar assistindo</span>
     <button class="continue-btn">${video.title}</button>
     <button class="continue-dismiss" title="Dispensar">✕</button>
   `;
