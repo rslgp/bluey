@@ -213,7 +213,7 @@ body {
 .player-overlay-title {
   position: absolute; bottom: 0; left: 0; right: 0;
   padding: 2rem 1.5rem .75rem;
-  background: linear-gradient(transparent, rgba(0,0,0,.8));
+  /* background: linear-gradient(transparent, rgba(0,0,0,.8)); */
   font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
   pointer-events: none;
 }
@@ -621,4 +621,74 @@ castable-video { display: none !important; }
   .catalog { padding: 1.5rem 1rem 3rem; }
   .player-controls-extra { flex-wrap: wrap; }
   .btn-upgrade span { display: none; }
+}
+
+
+
+
+/* Activate this on demand (JS: document.body.classList.add('windowed-mode')) */
+body.windowed-mode {
+  background: #000;
+  overflow: hidden; /* removes scrollbars */
+}
+
+/* Make container behave like a fullscreen window */
+body.windowed-mode #player-wrap {
+  position: fixed;
+  inset: 0;                 /* top:0 left:0 right:0 bottom:0 */
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Video fills everything */
+body.windowed-mode #player-wrap video,
+body.windowed-mode #player-wrap .video-js {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain; /* or 'cover' if you want crop-fill */
+}
+
+/* Remove any borders / shadows */
+body.windowed-mode #player-wrap,
+body.windowed-mode #player-wrap * {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Overlay title positioning */
+body.windowed-mode .player-overlay-title {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  color: white;
+  font-size: 1.2rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Hide distractions */
+body.windowed-mode header,
+body.windowed-mode footer,
+body.windowed-mode .sidebar,
+body.windowed-mode .ads,
+body.windowed-mode .extra-ui {
+  display: none !important;
+}
+
+#player-wrap {
+  transition: all 0.3s ease;
+}
+
+body.windowed-mode #player-wrap {
+  max-width: none !important;
+  width: 100dvw;
+  height: 100dvh;
 }

@@ -15,7 +15,7 @@ function _destroyPeer() {
 }
 
 // ── TV side ───────────────────────────────────────────────────────────────────
-export function activateTVMode({ onPlay, onPause, onResume }) {
+export function activateTVMode({ onPlay, onPause, onResume, onFullscreen }) {
   const tvModePanel = document.getElementById('tv-mode-panel');
   const tvCodeEl    = document.getElementById('tv-code-display');
   const tvStatusEl  = document.getElementById('tv-mode-status');
@@ -38,10 +38,7 @@ export function activateTVMode({ onPlay, onPause, onResume }) {
         case MSG.PLAY:       onPlay(msg.videoId); break;
         case MSG.PAUSE:      onPause?.();         break;
         case MSG.RESUME:     onResume?.();        break;
-        case MSG.FULLSCREEN:
-          if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-          else document.documentElement.requestFullscreen?.().catch(() => {});
-          break;
+        case MSG.FULLSCREEN: onFullscreen?.();    break;
       }
     });
     c.on('close', () => { _isPaired = false; tvStatusEl.textContent = 'Celular desconectado.'; });
