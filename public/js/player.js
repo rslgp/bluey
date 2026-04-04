@@ -138,6 +138,29 @@ export async function playVideo(id) {
 const _MP4_CHUNK  = 2 * 1024 * 1024; // 2 MB per range request
 const _MP4_CONNS  = 4;               // parallel connections
 
+// Retries fetch on HTTP 500 with exponential backoff.
+// TypeError (CORS, hard network failure) is re-thrown immediately — retrying won't help.
+async function _fetchWithRetry(url, options, maxRetries = 8, baseDelay = 1000) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const resp = await fetch(url, options);
+      if (resp.ok || resp.status === 206) return resp;
+      if (resp.status === 500 && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, baseDelay * (2 ** attempt)));
+        continue;
+      }
+      return resp;
+    } catch (e) {
+      if (e instanceof TypeError) throw e; // CORS / hard failure — don't retry
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, baseDelay * (2 ** attempt)));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
 let _mp4BlobUrl = null; // track so we can revoke on next play
 
 async function _playMp4Parallel(url) {
@@ -154,7 +177,7 @@ async function _playMp4Parallel(url) {
   // 1. Get total file size
   let total;
   try {
-    const head = await fetch(url, { method: 'HEAD' });
+    const head = await _fetchWithRetry(url, { method: 'HEAD' });
     total = parseInt(head.headers.get('content-length') || '0', 10);
   } catch { return fallback(); }
   if (!total) return fallback();
@@ -205,16 +228,37 @@ async function _playMp4Parallel(url) {
 
     sb.addEventListener('updateend', appendNext);
 
+    const abortCtrl = new AbortController();
+    let mseFailed = false;
+
     // 4. Download one chunk, store its bytes, then nudge the appender
     const downloadChunk = async (i) => {
+      if (mseFailed) return;
       const c = chunks[i];
       try {
-        const resp = await fetch(url, { headers: { Range: `bytes=${c.start}-${c.end}` } });
-        c.buf = new Uint8Array(await resp.arrayBuffer());
-      } catch {
-        c.buf = new Uint8Array(0); // skip broken chunk
+        const resp = await _fetchWithRetry(url, {
+          headers: { Range: `bytes=${c.start}-${c.end}` },
+          signal: abortCtrl.signal,
+        });
+        if (resp && (resp.ok || resp.status === 206)) {
+          c.buf = new Uint8Array(await resp.arrayBuffer());
+        } else {
+          c.buf = new Uint8Array(0); // skip non-retryable error
+        }
+      } catch (e) {
+        const isAbort = e instanceof DOMException && e.name === 'AbortError';
+        if (!mseFailed && !isAbort) {
+          // CORS or unrecoverable — abort pipeline and fall back to native <video src>
+          mseFailed = true;
+          abortCtrl.abort();
+          try { ms.endOfStream('network'); } catch {}
+          if (_mp4BlobUrl) { URL.revokeObjectURL(_mp4BlobUrl); _mp4BlobUrl = null; }
+          fallback();
+          return;
+        }
+        c.buf = new Uint8Array(0);
       }
-      appendNext(); // try to append if this was the next needed slot
+      if (!mseFailed) appendNext();
     };
 
     // 5. Pipeline: _MP4_CONNS workers each pull from a shared index queue
