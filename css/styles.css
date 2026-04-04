@@ -353,6 +353,7 @@ body {
   letter-spacing: -0.02em;
 }
 .catalog-user { color: var(--muted); font-size: .85rem; }
+.catalog-user-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
 
 /* ─── Season collapsible ─────────────────────────────────────────────────────── */
 .season-group { margin-bottom: 2rem; }
@@ -629,7 +630,6 @@ castable-video { display: none !important; }
   .navbar { padding: .75rem 1rem; }
   .catalog { padding: 1.5rem 1rem 3rem; }
   .player-controls-extra { flex-wrap: wrap; }
-  .btn-upgrade span { display: none; }
 }
 
 
