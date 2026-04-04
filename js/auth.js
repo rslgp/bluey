@@ -2,7 +2,7 @@
 import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          createUserWithEmailAndPassword,
-         GoogleAuthProvider, signInWithPopup,
+         GoogleAuthProvider, signInWithPopup, signInAnonymously,
          signOut as _signOut, onAuthStateChanged,
          getIdToken, getIdTokenResult }         from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
@@ -88,6 +88,12 @@ export function initAuthForms() {
       try { await signInWithPopup(_auth, _provider); }
       catch (e) { if (e.code !== 'auth/popup-closed-by-user') showError(_friendlyError(e.code)); }
     });
+  });
+
+  document.getElementById('btn-anon').addEventListener('click', async () => {
+    clearError();
+    try { await signInAnonymously(_auth); }
+    catch (e) { showError(_friendlyError(e.code)); }
   });
 
   document.getElementById('btn-logout').addEventListener('click', signOut);
