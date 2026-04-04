@@ -7,7 +7,7 @@ import { initFirebase, watchAuthState, refreshClaims,
 import { initCatalog, loadCatalog }             from './catalog.js';
 import { initPlayer, playVideo, setVideoList,
          getPlayer, setIsPremium,
-         getVideoList }                         from './player.js';
+         getVideoList, toggleFullscreen }                         from './player.js';
 import { initPix, openPixModal }                from './pix.js';
 // import { initScreencast }                       from './screencast.js';
 import { initCast }                             from './cast.js';
@@ -92,6 +92,24 @@ function _initTVControls() {
       onPlay:   playVideo,
       onPause:  () => getPlayer().pause(),
       onResume: () => getPlayer().play(),
+      onFullscreen: () => {
+        document.body.classList.toggle('windowed-mode');
+        // document.body.classList.toggle('theatre-mode');
+        // if(document.body.classList.contains('theatre-mode')){
+        //   document.getElementById("player-controls-extra").style.display = 'none';
+        //   document.getElementById("player-wrap").style.maxWidth = '100vw';
+        //   document.getElementById("player-wrap").style.maxHeight = '100vh';
+        //   document.getElementById("navbar").style.display = 'none';
+          
+        // }else{
+        //   document.getElementById("player-controls-extra").style.display = '';
+        //   document.getElementById("player-wrap").style.maxWidth = '900px';
+        //   document.getElementById("player-wrap").style.maxHeight = '';
+        //   document.getElementById("navbar").style.display = '';
+        // }
+        
+          //toggleFullscreen();
+      },
     });
   });
 

@@ -69,7 +69,7 @@
 <div id="screen-app" class="screen">
 
   <!-- Navbar -->
-  <nav class="navbar">
+  <nav class="navbar" id="navbar">
     <div class="brand small">
       <img class="brand-icon" src="https://www.bluey.tv/wp-content/themes/bbc-bluey/assets/images/favicons/favicon-32x32.png" alt="">
       <!-- <span class="brand-icon">▶</span> -->
@@ -126,7 +126,7 @@
 
   <!-- Player Area -->
   <section class="player-section" id="player-section" hidden>
-    <div class="player-wrap">
+    <div class="player-wrap" id="player-wrap">
       <!-- <video id="main-video" controls playsinline></video> -->
        <video id="main-video" class="video-js vjs-default-skin"></video>
       <div class="player-overlay-title" id="player-title"></div>
@@ -134,7 +134,7 @@
     <!-- castable-video element (hidden) — handles all Cast SDK routing -->
     <castable-video id="cast-video" playsinline hidden></castable-video>
 
-    <div class="player-controls-extra">
+    <div class="player-controls-extra" id="player-controls-extra">
       <button class="btn-nav" id="btn-prev-ep" hidden title="Episódio anterior">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/><line x1="9" y1="6" x2="9" y2="18"/></svg>
       </button>

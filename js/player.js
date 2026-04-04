@@ -48,6 +48,19 @@ export function getPlayer() { return player; }
 
 export function getVideoList() { return _videoList; }
 
+export function toggleFullscreen() {
+  if (player.isFullscreen()) {
+    player.exitFullscreen();
+  } else {
+    player.requestFullscreen();
+  }
+
+    // Request portrait fullscreen — must run synchronously in the user-gesture call chain
+  videoEl.requestFullscreen?.()
+    .then(() => screen.orientation.lock?.('portrait-primary').catch(() => {}))
+    .catch(() => {});
+}
+
 export async function playVideo(id) {
   const video = _videoList.find(v => v.id === id);
   if (!video) return;
