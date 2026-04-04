@@ -147,6 +147,15 @@ body {
 }
 .btn-google:hover { background: var(--border); }
 
+.btn-anon {
+  width: 100%; min-height: 44px; padding: .5rem;
+  background: none; border: none;
+  color: var(--muted); font-size: .85rem; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+  margin-top: 1rem;
+}
+.btn-anon:hover { color: var(--text); }
+
 .btn-icon {
   background: none; border: 1px solid var(--border);
   color: var(--muted); padding: .45rem .6rem; border-radius: 8px;
