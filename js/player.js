@@ -138,6 +138,27 @@ export async function playVideo(id) {
 const _MP4_CHUNK  = 2 * 1024 * 1024; // 2 MB per range request
 const _MP4_CONNS  = 4;               // parallel connections
 
+// Retries fetch on 500 or network error with exponential backoff.
+async function _fetchWithRetry(url, options, maxRetries = 8, baseDelay = 1000) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const resp = await fetch(url, options);
+      if (resp.ok || resp.status === 206) return resp;
+      if (resp.status === 500 && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, baseDelay * (2 ** attempt)));
+        continue;
+      }
+      return resp; // non-500 errors: return as-is
+    } catch (e) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, baseDelay * (2 ** attempt)));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
 let _mp4BlobUrl = null; // track so we can revoke on next play
 
 async function _playMp4Parallel(url) {
@@ -154,7 +175,7 @@ async function _playMp4Parallel(url) {
   // 1. Get total file size
   let total;
   try {
-    const head = await fetch(url, { method: 'HEAD' });
+    const head = await _fetchWithRetry(url, { method: 'HEAD' });
     total = parseInt(head.headers.get('content-length') || '0', 10);
   } catch { return fallback(); }
   if (!total) return fallback();
@@ -209,8 +230,12 @@ async function _playMp4Parallel(url) {
     const downloadChunk = async (i) => {
       const c = chunks[i];
       try {
-        const resp = await fetch(url, { headers: { Range: `bytes=${c.start}-${c.end}` } });
-        c.buf = new Uint8Array(await resp.arrayBuffer());
+        const resp = await _fetchWithRetry(url, { headers: { Range: `bytes=${c.start}-${c.end}` } });
+        if (resp && (resp.ok || resp.status === 206)) {
+          c.buf = new Uint8Array(await resp.arrayBuffer());
+        } else {
+          c.buf = new Uint8Array(0); // skip non-retryable error
+        }
       } catch {
         c.buf = new Uint8Array(0); // skip broken chunk
       }
