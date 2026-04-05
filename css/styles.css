@@ -441,6 +441,7 @@ body {
 .card-thumb img {
   width: 100%; height: 100%; object-fit: cover;
   transition: transform .3s;
+  transform: scale(1.58);
 }
 .video-card:not(.locked):hover .card-thumb img { transform: scale(1.05); }
 
@@ -463,7 +464,7 @@ body {
 
 .card-duration {
   position: absolute; bottom: .5rem; right: .5rem;
-  background: rgba(0,0,0,.75); color: #fff;
+  background: rgba(0, 0, 0, 0.51); color: #fff;
   font-size: .75rem; padding: .15rem .45rem; border-radius: 4px;
 }
 
