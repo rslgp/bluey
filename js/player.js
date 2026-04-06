@@ -48,17 +48,24 @@ export function getPlayer() { return player; }
 
 export function getVideoList() { return _videoList; }
 
+function _enterLandscapeFullscreen() {
+  if (document.fullscreenElement) {
+    screen.orientation.lock?.('landscape-primary').catch(() => {});
+  } else {
+    player.one('fullscreenchange', () => {
+      screen.orientation.lock?.('landscape-primary').catch(() => {});
+    });
+    player.requestFullscreen();
+  }
+}
+
 export function toggleFullscreen() {
   if (player.isFullscreen()) {
     player.exitFullscreen();
+    screen.orientation.unlock?.();
   } else {
-    player.requestFullscreen();
+    _enterLandscapeFullscreen();
   }
-
-    // Request portrait fullscreen — must run synchronously in the user-gesture call chain
-  videoEl.requestFullscreen?.()
-    .then(() => screen.orientation.lock?.('portrait-primary').catch(() => {}))
-    .catch(() => {});
 }
 
 export async function playVideo(id) {
@@ -79,10 +86,7 @@ export async function playVideo(id) {
   playerSection.scrollIntoView({ behavior: 'smooth' });
   castPreviewW.setAttribute('hidden', '');
 
-  // Request portrait fullscreen — must run synchronously in the user-gesture call chain
-  videoEl.requestFullscreen?.()
-    .then(() => screen.orientation.lock?.('portrait-primary').catch(() => {}))
-    .catch(() => {});
+  _enterLandscapeFullscreen();
 
   _castVideoEl.src = video.url;
   _castVideoEl.title = video.title;
