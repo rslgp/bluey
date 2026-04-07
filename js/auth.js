@@ -2,11 +2,11 @@
 import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          createUserWithEmailAndPassword,
-         GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, signInAnonymously,
+         GoogleAuthProvider, signInWithPopup, signInAnonymously,
          signOut as _signOut, onAuthStateChanged,
          getIdToken, getIdTokenResult }         from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-let _auth, _provider, _fbProvider, _currentUser;
+let _auth, _provider, _currentUser;
 
 export async function initFirebase() {
   const config = {
@@ -16,9 +16,8 @@ export async function initFirebase() {
     messagingSenderId: '118593400035',
     appId:             '1:118593400035:web:ac2e09564071b77ddea9d6',
   };
-  _auth       = getAuth(initializeApp(config));
-  _provider   = new GoogleAuthProvider();
-  _fbProvider = new FacebookAuthProvider();
+  _auth     = getAuth(initializeApp(config));
+  _provider = new GoogleAuthProvider();
 }
 
 export function getToken() {
@@ -87,14 +86,6 @@ export function initAuthForms() {
     document.getElementById(id).addEventListener('click', async () => {
       clearError();
       try { await signInWithPopup(_auth, _provider); }
-      catch (e) { if (e.code !== 'auth/popup-closed-by-user') showError(_friendlyError(e.code)); }
-    });
-  });
-
-  ['btn-facebook-login', 'btn-facebook-register'].forEach(id => {
-    document.getElementById(id).addEventListener('click', async () => {
-      clearError();
-      try { await signInWithPopup(_auth, _fbProvider); }
       catch (e) { if (e.code !== 'auth/popup-closed-by-user') showError(_friendlyError(e.code)); }
     });
   });
